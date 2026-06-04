@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bill Tracker</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 600px; }
+        .paycheck-card { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
+        .modal { display: none; background: #f4f4f4; padding: 20px; border: 1px solid #999; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <h1>Bill Tracker</h1>
+    <button onclick="document.getElementById('modal').style.display='block'">+ Add Bill</button>
+
+    <div id="modal" class="modal">
+        <input type="text" id="name" placeholder="Bill Name">
+        <input type="number" id="amount" placeholder="Amount">
+        <input type="number" id="day" placeholder="Due Day (1-31)">
+        <button onclick="addBill()">Save Bill</button>
+    </div>
+
+    <div id="displayArea"></div>
+
+    <script>
+        let bills = JSON.parse(localStorage.getItem('myBills')) || [];
+
+        function addBill() {
+            const newBill = {
+                name: document.getElementById('name').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                day: parseInt(document.getElementById('day').value)
+            };
+            bills.push(newBill);
+            localStorage.setItem('myBills', JSON.stringify(bills));
+            document.getElementById('modal').style.display = 'none';
+            render();
+        }
+
+        function render() {
+            const area = document.getElementById('displayArea');
+            area.innerHTML = '';
+            
+            // Logic: Paycheck 1 (1st-15th), Paycheck 2 (16th-31st)
+            const periods = { "Paycheck 1 (1st-15th)": [], "Paycheck 2 (16th-31st)": [] };
+            
+            bills.forEach(b => {
+                if (b.day <= 15) periods["Paycheck 1 (1st-15th)"].push(b);
+                else periods["Paycheck 2 (16th-31st)"].push(b);
+            });
+
+            for (let period in periods) {
+                let total = 0;
+                let html = `<div class="paycheck-card"><h3>${period}</h3><ul>`;
+                periods[period].forEach(b => {
+                    html += `<li>${b.name}: $${b.amount} (Due: ${b.day})</li>`;
+                    total += b.amount;
+                });
+                html += `</ul><strong>Total: $${total}</strong></div>`;
+                area.innerHTML += html;
+            }
+        }
+
+        render();
+    </script>
+</body>
+</html>
