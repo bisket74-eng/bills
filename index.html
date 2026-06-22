@@ -136,6 +136,10 @@
             color: var(--greenText);
         }
 
+        .cushion-money {
+            color: var(--cushionText);
+        }
+
         .warning-text {
             color: var(--cushionText);
             font-weight: 800;
@@ -440,7 +444,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 8px;
-            margin: 10px 0;
+            margin: 12px 0 0;
         }
 
         .mini-box {
@@ -459,30 +463,6 @@
         .mini-value {
             font-size: 17px;
             font-weight: 900;
-        }
-
-        .cushion-box {
-            margin-top: 10px;
-            background: var(--cushionBox);
-            border: 1px solid rgba(184, 121, 0, 0.28);
-            border-radius: 16px;
-            padding: 10px;
-            font-size: 13px;
-            line-height: 1.35;
-            color: var(--cushionText);
-        }
-
-        .cushion-box strong {
-            color: var(--cushionText);
-        }
-
-        .cushion-warning {
-            background: var(--cushionBox);
-            border-color: rgba(184, 121, 0, 0.35);
-        }
-
-        .cushion-warning .warning-text {
-            color: var(--cushionText);
         }
 
         .tiny-list {
@@ -659,8 +639,8 @@
                 <button id="savePaycheckBtn" class="primary-btn">Save Paycheck Settings</button>
 
                 <p class="small-note">
-                    The smart area keeps a $300 cushion target. If a future paycheck comes up short,
-                    the previous paycheck will tell you how much to hold back.
+                    The smart area keeps a $400 cushion target. If a future paycheck comes up short,
+                    the previous paycheck will show a cushion hold.
                 </p>
             </div>
         </section>
@@ -687,7 +667,7 @@
     <script>
         const BILL_STORAGE_KEY = "billTracker.bills.v2";
         const SETTINGS_STORAGE_KEY = "billTracker.settings.v2";
-        const CUSHION_TARGET = 300;
+        const CUSHION_TARGET = 400;
 
         const DEFAULT_BILLS = [
             "Rent / Mortgage",
@@ -1101,7 +1081,7 @@
 
                 if (index === 0 && check.plannedLeftover < CUSHION_TARGET) {
                     const shortage = CUSHION_TARGET - check.plannedLeftover;
-                    check.warning = `This first visible paycheck is still short by ${formatMoney(shortage)} because there is no earlier paycheck shown to pull from.`;
+                    check.warning = shortage;
                 }
             });
 
@@ -1279,7 +1259,7 @@
                     html += `<br><br><strong>Pay these bills from this paycheck:</strong>`;
                     html += `<div class="small-note">Covers ${formatDate(check.date)} through ${formatDate(periodEnd)}</div>`;
 
-                    if (!check.bills.length && !check.holdForNext) {
+                    if (!check.bills.length && !check.holdForNext && !check.cushionFromPrevious && !check.warning) {
                         html += `<br>No bills are assigned to this paycheck.`;
                     } else {
                         html += `<ul class="selected-pay-list">`;
@@ -1294,12 +1274,32 @@
                             `;
                         });
 
+                        if (check.cushionFromPrevious > 0) {
+                            html += `
+                                <li class="cushion-line">
+                                    <span>+</span>
+                                    <span>Cushion</span>
+                                    <strong>+${formatMoney(check.cushionFromPrevious)}</strong>
+                                </li>
+                            `;
+                        }
+
                         if (check.holdForNext > 0) {
                             html += `
                                 <li class="cushion-line">
-                                    <span>Hold</span>
-                                    <span>Next paycheck cushion</span>
-                                    <strong>${formatMoney(check.holdForNext)}</strong>
+                                    <span>-</span>
+                                    <span>Cushion</span>
+                                    <strong>-${formatMoney(check.holdForNext)}</strong>
+                                </li>
+                            `;
+                        }
+
+                        if (check.warning) {
+                            html += `
+                                <li class="cushion-line">
+                                    <span>!</span>
+                                    <span>Cushion short</span>
+                                    <strong>-${formatMoney(check.warning)}</strong>
                                 </li>
                             `;
                         }
@@ -1412,51 +1412,9 @@
                             </div>
                             <span class="pill">#${index + 1}</span>
                         </div>
-
-                        <div class="paycheck-summary">
-                            <div class="mini-box">
-                                <div class="mini-label">Bills from this check</div>
-                                <div class="mini-value red-money">${formatMoney(check.totalBills)}</div>
-                            </div>
-
-                            <div class="mini-box">
-                                <div class="mini-label">${payAmount ? "Left after bills and cushion" : "Paycheck amount"}</div>
-                                <div class="mini-value green-money">
-                                    ${payAmount ? formatMoney(check.plannedLeftover) : "Add amount"}
-                                </div>
-                            </div>
-                        </div>
                 `;
 
-                if (payAmount) {
-                    if (check.cushionFromPrevious > 0) {
-                        html += `
-                            <div class="cushion-box">
-                                <strong>Cushion from previous check:</strong>
-                                Use ${formatMoney(check.cushionFromPrevious)} that was held back earlier so this check can still end with at least ${formatMoney(CUSHION_TARGET)}.
-                            </div>
-                        `;
-                    }
-
-                    if (check.holdForNext > 0) {
-                        html += `
-                            <div class="cushion-box">
-                                <strong>Hold for next paycheck cushion:</strong>
-                                Save ${formatMoney(check.holdForNext)} from this check for the next paycheck. This is not a bill; it is cushion money.
-                            </div>
-                        `;
-                    }
-
-                    if (check.warning) {
-                        html += `
-                            <div class="cushion-box cushion-warning">
-                                <span class="warning-text">${check.warning}</span>
-                            </div>
-                        `;
-                    }
-                }
-
-                if (!check.bills.length && !check.holdForNext) {
+                if (!check.bills.length && !check.holdForNext && !check.cushionFromPrevious && !check.warning) {
                     html += `<div class="small-note">No saved bills fall between this paycheck and the next one.</div>`;
                 } else {
                     html += `<ul class="tiny-list">`;
@@ -1471,12 +1429,32 @@
                         `;
                     });
 
+                    if (check.cushionFromPrevious > 0) {
+                        html += `
+                            <li class="cushion-line">
+                                <span>+</span>
+                                <span>Cushion</span>
+                                <strong>+${formatMoney(check.cushionFromPrevious)}</strong>
+                            </li>
+                        `;
+                    }
+
                     if (check.holdForNext > 0) {
                         html += `
                             <li class="cushion-line">
-                                <span>Hold</span>
-                                <span>Next paycheck cushion, not a bill</span>
-                                <strong>${formatMoney(check.holdForNext)}</strong>
+                                <span>-</span>
+                                <span>Cushion</span>
+                                <strong>-${formatMoney(check.holdForNext)}</strong>
+                            </li>
+                        `;
+                    }
+
+                    if (check.warning) {
+                        html += `
+                            <li class="cushion-line">
+                                <span>!</span>
+                                <span>Cushion short</span>
+                                <strong>-${formatMoney(check.warning)}</strong>
                             </li>
                         `;
                     }
@@ -1484,7 +1462,22 @@
                     html += `</ul>`;
                 }
 
-                html += `</div>`;
+                html += `
+                        <div class="paycheck-summary">
+                            <div class="mini-box">
+                                <div class="mini-label">Bills from this check</div>
+                                <div class="mini-value red-money">${formatMoney(check.totalBills)}</div>
+                            </div>
+
+                            <div class="mini-box">
+                                <div class="mini-label">${payAmount ? "Left after bills and cushion" : "Paycheck amount"}</div>
+                                <div class="mini-value green-money">
+                                    ${payAmount ? formatMoney(check.plannedLeftover) : "Add amount"}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
             });
 
             els.paycheckArea.innerHTML = html;
@@ -1666,7 +1659,7 @@
         function exportBackup() {
             const backup = {
                 app: "My Bills",
-                version: 7,
+                version: 8,
                 exportedAt: new Date().toISOString(),
                 bills,
                 settings
