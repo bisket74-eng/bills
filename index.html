@@ -1,68 +1,1215 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Bill Tracker</title>
+
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 600px; }
-        .paycheck-card { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
-        .modal { display: none; background: #f4f4f4; padding: 20px; border: 1px solid #999; margin-bottom: 20px; }
-    </style>
-</head>
-<body>
-
-    <h1>Bill Tracker</h1>
-    <button onclick="document.getElementById('modal').style.display='block'">+ Add Bill</button>
-
-    <div id="modal" class="modal">
-        <input type="text" id="name" placeholder="Bill Name">
-        <input type="number" id="amount" placeholder="Amount">
-        <input type="number" id="day" placeholder="Due Day (1-31)">
-        <button onclick="addBill()">Save Bill</button>
-    </div>
-
-    <div id="displayArea"></div>
-
-    <script>
-        let bills = JSON.parse(localStorage.getItem('myBills')) || [];
-
-        function addBill() {
-            const newBill = {
-                name: document.getElementById('name').value,
-                amount: parseFloat(document.getElementById('amount').value),
-                day: parseInt(document.getElementById('day').value)
-            };
-            bills.push(newBill);
-            localStorage.setItem('myBills', JSON.stringify(bills));
-            document.getElementById('modal').style.display = 'none';
-            render();
+        :root {
+            --bg1: #ffe8f1;
+            --bg2: #e7f3ff;
+            --bg3: #eafbe7;
+            --card: rgba(255, 255, 255, 0.86);
+            --text: #343045;
+            --muted: #7a738a;
+            --pink: #f7a6c6;
+            --blue: #9ec9ff;
+            --green: #aee8be;
+            --yellow: #ffe6a7;
+            --purple: #cdb6ff;
+            --border: rgba(90, 80, 110, 0.16);
+            --shadow: 0 14px 35px rgba(90, 80, 110, 0.16);
+            --radius: 24px;
         }
 
-        function render() {
-            const area = document.getElementById('displayArea');
-            area.innerHTML = '';
-            
-            // Logic: Paycheck 1 (1st-15th), Paycheck 2 (16th-31st)
-            const periods = { "Paycheck 1 (1st-15th)": [], "Paycheck 2 (16th-31st)": [] };
-            
-            bills.forEach(b => {
-                if (b.day <= 15) periods["Paycheck 1 (1st-15th)"].push(b);
-                else periods["Paycheck 2 (16th-31st)"].push(b);
-            });
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-            for (let period in periods) {
-                let total = 0;
-                let html = `<div class="paycheck-card"><h3>${period}</h3><ul>`;
-                periods[period].forEach(b => {
-                    html += `<li>${b.name}: $${b.amount} (Due: ${b.day})</li>`;
-                    total += b.amount;
-                });
-                html += `</ul><strong>Total: $${total}</strong></div>`;
-                area.innerHTML += html;
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, var(--bg1), transparent 34%),
+                radial-gradient(circle at top right, var(--bg2), transparent 36%),
+                linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+            padding: 14px;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 520px;
+            margin: 0 auto;
+            padding-bottom: 40px;
+        }
+
+        .top-header {
+            padding: 12px 4px 16px;
+        }
+
+        .top-header h1 {
+            margin: 0;
+            font-size: 34px;
+            letter-spacing: -1px;
+        }
+
+        .top-header p {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 16px;
+            margin-bottom: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .section-title {
+            margin: 0 0 12px;
+            font-size: 20px;
+        }
+
+        .small-note {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        button,
+        select,
+        input {
+            font: inherit;
+        }
+
+        button {
+            border: none;
+            border-radius: 16px;
+            padding: 12px 14px;
+            font-weight: 700;
+            color: var(--text);
+            background: var(--yellow);
+            box-shadow: 0 6px 16px rgba(80, 70, 95, 0.14);
+            cursor: pointer;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .primary-btn {
+            background: linear-gradient(135deg, var(--pink), var(--purple));
+            color: white;
+        }
+
+        .soft-btn {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            box-shadow: none;
+        }
+
+        .danger-btn {
+            background: #ffd0d0;
+            color: #8a2c2c;
+            padding: 8px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+        }
+
+        .edit-btn {
+            background: #dcecff;
+            color: #315f92;
+            padding: 8px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.88);
+            color: var(--text);
+            border-radius: 16px;
+            padding: 13px 14px;
+            outline: none;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--purple);
+            box-shadow: 0 0 0 4px rgba(205, 182, 255, 0.25);
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .calendar-head {
+            display: grid;
+            grid-template-columns: 48px 1fr 48px;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .calendar-head button {
+            padding: 11px 0;
+            border-radius: 16px;
+            background: white;
+            border: 1px solid var(--border);
+            box-shadow: none;
+            font-size: 20px;
+        }
+
+        #monthTitle {
+            text-align: center;
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            touch-action: pan-y;
+            user-select: none;
+        }
+
+        .dow {
+            text-align: center;
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 800;
+            padding: 4px 0;
+        }
+
+        .day {
+            min-height: 48px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.66);
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            font-weight: 800;
+            position: relative;
+        }
+
+        .day.blank {
+            background: transparent;
+            border: none;
+        }
+
+        .day.today {
+            outline: 3px solid rgba(247, 166, 198, 0.55);
+            background: #fff4f8;
+        }
+
+        .day.selected {
+            background: linear-gradient(135deg, #ffbed6, #cdb6ff);
+            color: white;
+        }
+
+        .dots {
+            display: flex;
+            gap: 3px;
+            min-height: 6px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 99px;
+        }
+
+        .bill-dot {
+            background: #f28ab2;
+        }
+
+        .pay-dot {
+            background: #69b8ff;
+        }
+
+        .selected-day-box {
+            margin-top: 12px;
+            background: rgba(255, 255, 255, 0.66);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 12px;
+        }
+
+        .selected-day-box strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .table-wrap {
+            overflow: hidden;
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.68);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .amount {
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .bill-actions {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+
+        .paycheck-card {
+            background: rgba(255, 255, 255, 0.72);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 14px;
+            margin-top: 12px;
+        }
+
+        .paycheck-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .paycheck-date {
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #eef7ff;
+            color: #38658f;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .paycheck-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .mini-box {
+            background: rgba(255, 255, 255, 0.72);
+            border-radius: 16px;
+            padding: 10px;
+            border: 1px solid rgba(90, 80, 110, 0.1);
+        }
+
+        .mini-label {
+            color: var(--muted);
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+
+        .mini-value {
+            font-size: 17px;
+            font-weight: 900;
+        }
+
+        .tiny-list {
+            margin: 8px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .tiny-list li {
+            display: grid;
+            grid-template-columns: 54px 1fr auto;
+            gap: 8px;
+            align-items: center;
+            padding: 8px 0;
+            border-top: 1px solid rgba(90, 80, 110, 0.12);
+            font-size: 14px;
+        }
+
+        .empty {
+            text-align: center;
+            color: var(--muted);
+            padding: 20px 10px;
+        }
+
+        .hide {
+            display: none;
+        }
+
+        @media (max-width: 420px) {
+            body {
+                padding: 10px;
+            }
+
+            .top-header h1 {
+                font-size: 30px;
+            }
+
+            .card {
+                padding: 14px;
+            }
+
+            .day {
+                min-height: 43px;
+                border-radius: 14px;
+                font-size: 14px;
+            }
+
+            th,
+            td {
+                padding: 9px 6px;
+                font-size: 13px;
+            }
+
+            .bill-actions {
+                flex-direction: column;
+            }
+
+            .paycheck-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="app">
+        <header class="top-header">
+            <h1>Bill Tracker</h1>
+            <p id="todayLine">Your monthly bills and paycheck plan</p>
+        </header>
+
+        <section class="card">
+            <div class="calendar-head">
+                <button id="prevMonthBtn" aria-label="Previous month">‹</button>
+                <div id="monthTitle">Month 2026</div>
+                <button id="nextMonthBtn" aria-label="Next month">›</button>
+            </div>
+
+            <div id="calendarGrid" class="calendar-grid"></div>
+
+            <div id="selectedDayBox" class="selected-day-box">
+                <strong>Selected day</strong>
+                <div id="selectedDayText" class="small-note"></div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2 class="section-title">Add or Update a Bill</h2>
+
+            <div class="form-grid">
+                <select id="billPick">
+                    <option value="">Choose a bill...</option>
+                </select>
+
+                <input id="customBillName" class="hide" type="text" placeholder="Custom bill name" />
+
+                <div class="two-col">
+                    <input id="amount" type="number" inputmode="decimal" step="0.01" placeholder="Amount" />
+                    <input id="dueDay" type="number" inputmode="numeric" min="1" max="31" placeholder="Due day" />
+                </div>
+
+                <button id="saveBillBtn" class="primary-btn">Save Bill</button>
+                <p class="small-note">
+                    Pick a bill, enter the amount and the day of the month it is due, then save it.
+                    If the same bill already exists, it will update it.
+                </p>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2 class="section-title">My Bills</h2>
+
+            <div id="billTableArea"></div>
+        </section>
+
+        <section class="card">
+            <h2 class="section-title">Paycheck Setup</h2>
+
+            <div class="form-grid">
+                <input id="paycheckAmount" type="number" inputmode="decimal" step="0.01" placeholder="Paycheck amount, optional" />
+
+                <div class="two-col">
+                    <input id="nextPayDate" type="date" />
+                    <select id="payFrequency">
+                        <option value="weekly">Weekly</option>
+                        <option value="biweekly">Every 2 weeks</option>
+                        <option value="semimonthly">1st and 15th</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
+
+                <button id="savePaycheckBtn" class="primary-btn">Save Paycheck Settings</button>
+
+                <p class="small-note">
+                    The smart area below looks at each paycheck date and assigns bills that are due before the next paycheck.
+                </p>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2 class="section-title">Next 4 Paychecks</h2>
+            <div id="paycheckArea"></div>
+        </section>
+    </main>
+
+    <script>
+        const BILL_STORAGE_KEY = "billTracker.bills.v2";
+        const SETTINGS_STORAGE_KEY = "billTracker.settings.v2";
+
+        const DEFAULT_BILLS = [
+            "Rent / Mortgage",
+            "Electric",
+            "Water",
+            "Garbage",
+            "Internet",
+            "Phone",
+            "Car Payment",
+            "Car Insurance",
+            "Health Insurance",
+            "Credit Card",
+            "Loan",
+            "Streaming",
+            "Storage",
+            "Gym",
+            "Subscription",
+            "Other"
+        ];
+
+        const today = startOfDay(new Date());
+
+        let bills = loadBills();
+        let settings = loadSettings();
+        let calendarCursor = new Date(today.getFullYear(), today.getMonth(), 1);
+        let selectedDay = today.getDate();
+
+        const els = {
+            todayLine: document.getElementById("todayLine"),
+            calendarGrid: document.getElementById("calendarGrid"),
+            monthTitle: document.getElementById("monthTitle"),
+            prevMonthBtn: document.getElementById("prevMonthBtn"),
+            nextMonthBtn: document.getElementById("nextMonthBtn"),
+            selectedDayText: document.getElementById("selectedDayText"),
+            billPick: document.getElementById("billPick"),
+            customBillName: document.getElementById("customBillName"),
+            amount: document.getElementById("amount"),
+            dueDay: document.getElementById("dueDay"),
+            saveBillBtn: document.getElementById("saveBillBtn"),
+            billTableArea: document.getElementById("billTableArea"),
+            paycheckAmount: document.getElementById("paycheckAmount"),
+            nextPayDate: document.getElementById("nextPayDate"),
+            payFrequency: document.getElementById("payFrequency"),
+            savePaycheckBtn: document.getElementById("savePaycheckBtn"),
+            paycheckArea: document.getElementById("paycheckArea")
+        };
+
+        function loadBills() {
+            const saved = localStorage.getItem(BILL_STORAGE_KEY);
+
+            if (saved) {
+                try {
+                    return JSON.parse(saved).filter(isValidBill);
+                } catch {
+                    return [];
+                }
+            }
+
+            const oldSaved = localStorage.getItem("myBills");
+
+            if (oldSaved) {
+                try {
+                    const imported = JSON.parse(oldSaved)
+                        .map(b => ({
+                            id: makeId(),
+                            name: String(b.name || "").trim(),
+                            amount: Number(b.amount || 0),
+                            day: Number(b.day || 1)
+                        }))
+                        .filter(isValidBill);
+
+                    localStorage.setItem(BILL_STORAGE_KEY, JSON.stringify(imported));
+                    return imported;
+                } catch {
+                    return [];
+                }
+            }
+
+            return [];
+        }
+
+        function loadSettings() {
+            const fallback = {
+                paycheckAmount: "",
+                nextPayDate: getNextFridayISO(),
+                payFrequency: "biweekly"
+            };
+
+            const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+
+            if (!saved) return fallback;
+
+            try {
+                return { ...fallback, ...JSON.parse(saved) };
+            } catch {
+                return fallback;
             }
         }
 
-        render();
+        function isValidBill(b) {
+            return b &&
+                typeof b.name === "string" &&
+                b.name.trim() &&
+                Number.isFinite(Number(b.amount)) &&
+                Number.isFinite(Number(b.day)) &&
+                Number(b.day) >= 1 &&
+                Number(b.day) <= 31;
+        }
+
+        function makeId() {
+            return "bill_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+        }
+
+        function saveBills() {
+            localStorage.setItem(BILL_STORAGE_KEY, JSON.stringify(bills));
+        }
+
+        function saveSettings() {
+            localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+        }
+
+        function startOfDay(date) {
+            return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        }
+
+        function parseISODate(value) {
+            if (!value) return null;
+            const parts = value.split("-").map(Number);
+            if (parts.length !== 3) return null;
+            return new Date(parts[0], parts[1] - 1, parts[2]);
+        }
+
+        function toISODate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, "0");
+            const d = String(date.getDate()).padStart(2, "0");
+            return `${y}-${m}-${d}`;
+        }
+
+        function formatDate(date) {
+            return date.toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric"
+            });
+        }
+
+        function formatMoney(value) {
+            const num = Number(value || 0);
+            return num.toLocaleString(undefined, {
+                style: "currency",
+                currency: "USD"
+            });
+        }
+
+        function escapeHTML(value) {
+            return String(value)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function getNextFridayISO() {
+            const d = new Date(today);
+            while (d.getDay() !== 5) {
+                d.setDate(d.getDate() + 1);
+            }
+            return toISODate(d);
+        }
+
+        function safeDueDate(year, monthIndex, day) {
+            const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+            return new Date(year, monthIndex, Math.min(Number(day), lastDay));
+        }
+
+        function sameDay(a, b) {
+            return a.getFullYear() === b.getFullYear() &&
+                a.getMonth() === b.getMonth() &&
+                a.getDate() === b.getDate();
+        }
+
+        function addMonthsClamped(date, months) {
+            const desiredDay = date.getDate();
+            const target = new Date(date.getFullYear(), date.getMonth() + months, 1);
+            const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+            target.setDate(Math.min(desiredDay, lastDay));
+            return target;
+        }
+
+        function getNextPayDateAfter(date, frequency) {
+            const d = new Date(date);
+
+            if (frequency === "weekly") {
+                d.setDate(d.getDate() + 7);
+                return d;
+            }
+
+            if (frequency === "biweekly") {
+                d.setDate(d.getDate() + 14);
+                return d;
+            }
+
+            if (frequency === "monthly") {
+                return addMonthsClamped(d, 1);
+            }
+
+            if (frequency === "semimonthly") {
+                if (d.getDate() < 15) {
+                    return new Date(d.getFullYear(), d.getMonth(), 15);
+                }
+
+                return new Date(d.getFullYear(), d.getMonth() + 1, 1);
+            }
+
+            d.setDate(d.getDate() + 14);
+            return d;
+        }
+
+        function getNextFourPaychecks() {
+            let first = parseISODate(settings.nextPayDate) || parseISODate(getNextFridayISO());
+
+            while (first < today) {
+                first = getNextPayDateAfter(first, settings.payFrequency);
+            }
+
+            const checks = [];
+            let current = first;
+
+            for (let i = 0; i < 4; i++) {
+                const next = getNextPayDateAfter(current, settings.payFrequency);
+                checks.push({
+                    date: current,
+                    nextDate: next,
+                    bills: getBillOccurrencesInRange(current, next)
+                });
+                current = next;
+            }
+
+            return checks;
+        }
+
+        function getBillOccurrencesInRange(start, endExclusive) {
+            const results = [];
+            const monthCursor = new Date(start.getFullYear(), start.getMonth() - 1, 1);
+            const monthLimit = new Date(endExclusive.getFullYear(), endExclusive.getMonth() + 1, 1);
+
+            bills.forEach(bill => {
+                let cursor = new Date(monthCursor);
+
+                while (cursor <= monthLimit) {
+                    const dueDate = safeDueDate(cursor.getFullYear(), cursor.getMonth(), bill.day);
+
+                    if (dueDate >= start && dueDate < endExclusive) {
+                        results.push({
+                            ...bill,
+                            dueDate
+                        });
+                    }
+
+                    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+                }
+            });
+
+            return results.sort((a, b) => {
+                if (a.dueDate - b.dueDate !== 0) return a.dueDate - b.dueDate;
+                return a.name.localeCompare(b.name);
+            });
+        }
+
+        function getBillsDueOnCalendarDay(year, monthIndex, day) {
+            return bills.filter(bill => {
+                const dueDate = safeDueDate(year, monthIndex, bill.day);
+                return dueDate.getDate() === day;
+            });
+        }
+
+        function getPaychecksOnCalendarDay(year, monthIndex, day) {
+            return getNextFourPaychecks().filter(check =>
+                check.date.getFullYear() === year &&
+                check.date.getMonth() === monthIndex &&
+                check.date.getDate() === day
+            );
+        }
+
+        function renderBillPickOptions() {
+            const current = els.billPick.value;
+
+            const savedNames = bills
+                .map(b => b.name)
+                .filter(Boolean)
+                .sort((a, b) => a.localeCompare(b));
+
+            const names = [...new Set([...DEFAULT_BILLS, ...savedNames])];
+
+            els.billPick.innerHTML = `<option value="">Choose a bill...</option>`;
+
+            names.forEach(name => {
+                const option = document.createElement("option");
+                option.value = name;
+                option.textContent = name;
+                els.billPick.appendChild(option);
+            });
+
+            const custom = document.createElement("option");
+            custom.value = "__custom__";
+            custom.textContent = "+ Custom bill";
+            els.billPick.appendChild(custom);
+
+            if ([...els.billPick.options].some(o => o.value === current)) {
+                els.billPick.value = current;
+            }
+        }
+
+        function renderCalendar() {
+            const year = calendarCursor.getFullYear();
+            const month = calendarCursor.getMonth();
+
+            els.monthTitle.textContent = calendarCursor.toLocaleDateString(undefined, {
+                month: "long",
+                year: "numeric"
+            });
+
+            els.calendarGrid.innerHTML = "";
+
+            ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach(dayName => {
+                const div = document.createElement("div");
+                div.className = "dow";
+                div.textContent = dayName;
+                els.calendarGrid.appendChild(div);
+            });
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < firstDay; i++) {
+                const blank = document.createElement("div");
+                blank.className = "day blank";
+                els.calendarGrid.appendChild(blank);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const cell = document.createElement("button");
+                cell.type = "button";
+                cell.className = "day";
+
+                const cellDate = new Date(year, month, day);
+                const dueBills = getBillsDueOnCalendarDay(year, month, day);
+                const paychecks = getPaychecksOnCalendarDay(year, month, day);
+
+                if (sameDay(cellDate, today)) cell.classList.add("today");
+                if (day === selectedDay) cell.classList.add("selected");
+
+                cell.innerHTML = `
+                    <span>${day}</span>
+                    <span class="dots">
+                        ${dueBills.length ? `<span class="dot bill-dot"></span>` : ""}
+                        ${paychecks.length ? `<span class="dot pay-dot"></span>` : ""}
+                    </span>
+                `;
+
+                cell.addEventListener("click", () => {
+                    selectedDay = day;
+                    els.dueDay.value = day;
+                    renderCalendar();
+                    renderSelectedDay();
+                });
+
+                els.calendarGrid.appendChild(cell);
+            }
+
+            renderSelectedDay();
+        }
+
+        function renderSelectedDay() {
+            const year = calendarCursor.getFullYear();
+            const month = calendarCursor.getMonth();
+            const selectedDate = new Date(year, month, selectedDay);
+            const dueBills = getBillsDueOnCalendarDay(year, month, selectedDay);
+            const paychecks = getPaychecksOnCalendarDay(year, month, selectedDay);
+
+            let html = `${formatDate(selectedDate)}`;
+
+            if (!dueBills.length && !paychecks.length) {
+                html += `<br>No bills or paychecks saved for this day.`;
+            }
+
+            if (paychecks.length) {
+                html += `<br><br><strong>Paycheck day</strong>`;
+            }
+
+            if (dueBills.length) {
+                html += `<br><br><strong>Bills due:</strong>`;
+                html += `<ul style="margin: 6px 0 0; padding-left: 18px;">`;
+                dueBills.forEach(bill => {
+                    html += `<li>${escapeHTML(bill.name)} — ${formatMoney(bill.amount)}</li>`;
+                });
+                html += `</ul>`;
+            }
+
+            els.selectedDayText.innerHTML = html;
+        }
+
+        function renderBillTable() {
+            if (!bills.length) {
+                els.billTableArea.innerHTML = `
+                    <div class="empty">
+                        No bills saved yet. Add your first bill above.
+                    </div>
+                `;
+                return;
+            }
+
+            const sorted = [...bills].sort((a, b) => {
+                if (a.day !== b.day) return a.day - b.day;
+                return a.name.localeCompare(b.name);
+            });
+
+            let html = `
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Day</th>
+                                <th>Bill</th>
+                                <th>Amount</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            sorted.forEach(bill => {
+                html += `
+                    <tr>
+                        <td>${bill.day}</td>
+                        <td>${escapeHTML(bill.name)}</td>
+                        <td class="amount">${formatMoney(bill.amount)}</td>
+                        <td>
+                            <div class="bill-actions">
+                                <button class="edit-btn" onclick="editBill('${bill.id}')">Edit</button>
+                                <button class="danger-btn" onclick="deleteBill('${bill.id}')">X</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            els.billTableArea.innerHTML = html;
+        }
+
+        function renderPaychecks() {
+            const checks = getNextFourPaychecks();
+            const payAmount = Number(settings.paycheckAmount || 0);
+
+            let html = "";
+
+            checks.forEach((check, index) => {
+                const periodEnd = new Date(check.nextDate);
+                periodEnd.setDate(periodEnd.getDate() - 1);
+
+                const totalBills = check.bills.reduce((sum, bill) => sum + Number(bill.amount || 0), 0);
+                const leftover = payAmount ? payAmount - totalBills : null;
+
+                html += `
+                    <div class="paycheck-card">
+                        <div class="paycheck-top">
+                            <div>
+                                <div class="paycheck-date">${formatDate(check.date)}</div>
+                                <div class="small-note">Covers ${formatDate(check.date)} through ${formatDate(periodEnd)}</div>
+                            </div>
+                            <span class="pill">#${index + 1}</span>
+                        </div>
+
+                        <div class="paycheck-summary">
+                            <div class="mini-box">
+                                <div class="mini-label">Bills from this check</div>
+                                <div class="mini-value">${formatMoney(totalBills)}</div>
+                            </div>
+
+                            <div class="mini-box">
+                                <div class="mini-label">${payAmount ? "Left after bills" : "Paycheck amount"}</div>
+                                <div class="mini-value">${payAmount ? formatMoney(leftover) : "Add amount"}</div>
+                            </div>
+                        </div>
+                `;
+
+                if (!check.bills.length) {
+                    html += `<div class="small-note">No saved bills fall between this paycheck and the next one.</div>`;
+                } else {
+                    html += `<ul class="tiny-list">`;
+
+                    check.bills.forEach(bill => {
+                        html += `
+                            <li>
+                                <span>${bill.dueDate.getMonth() + 1}/${bill.dueDate.getDate()}</span>
+                                <span>${escapeHTML(bill.name)}</span>
+                                <strong>${formatMoney(bill.amount)}</strong>
+                            </li>
+                        `;
+                    });
+
+                    html += `</ul>`;
+                }
+
+                html += `</div>`;
+            });
+
+            els.paycheckArea.innerHTML = html;
+        }
+
+        function renderAll() {
+            els.todayLine.textContent = `Today is ${formatDate(today)}`;
+            renderBillPickOptions();
+            renderCalendar();
+            renderBillTable();
+            renderPaychecks();
+        }
+
+        function saveBillFromForm() {
+            let name = els.billPick.value;
+
+            if (name === "__custom__") {
+                name = els.customBillName.value.trim();
+            }
+
+            const amount = Number(els.amount.value);
+            const day = Number(els.dueDay.value);
+
+            if (!name) {
+                alert("Choose a bill or enter a custom bill name.");
+                return;
+            }
+
+            if (!Number.isFinite(amount) || amount < 0) {
+                alert("Enter a valid amount.");
+                return;
+            }
+
+            if (!Number.isInteger(day) || day < 1 || day > 31) {
+                alert("Enter a due day between 1 and 31.");
+                return;
+            }
+
+            const existingIndex = bills.findIndex(b =>
+                b.name.trim().toLowerCase() === name.trim().toLowerCase()
+            );
+
+            const billData = {
+                id: existingIndex >= 0 ? bills[existingIndex].id : makeId(),
+                name: name.trim(),
+                amount,
+                day
+            };
+
+            if (existingIndex >= 0) {
+                bills[existingIndex] = billData;
+            } else {
+                bills.push(billData);
+            }
+
+            saveBills();
+
+            els.billPick.value = "";
+            els.customBillName.value = "";
+            els.customBillName.classList.add("hide");
+            els.amount.value = "";
+            els.dueDay.value = "";
+
+            renderAll();
+        }
+
+        window.editBill = function(id) {
+            const bill = bills.find(b => b.id === id);
+            if (!bill) return;
+
+            renderBillPickOptions();
+
+            const optionExists = [...els.billPick.options].some(o => o.value === bill.name);
+
+            if (optionExists) {
+                els.billPick.value = bill.name;
+                els.customBillName.classList.add("hide");
+                els.customBillName.value = "";
+            } else {
+                els.billPick.value = "__custom__";
+                els.customBillName.classList.remove("hide");
+                els.customBillName.value = bill.name;
+            }
+
+            els.amount.value = bill.amount;
+            els.dueDay.value = bill.day;
+
+            window.scrollTo({
+                top: document.querySelector(".card:nth-of-type(2)").offsetTop - 10,
+                behavior: "smooth"
+            });
+        };
+
+        window.deleteBill = function(id) {
+            const bill = bills.find(b => b.id === id);
+            if (!bill) return;
+
+            const ok = confirm(`Delete ${bill.name}?`);
+            if (!ok) return;
+
+            bills = bills.filter(b => b.id !== id);
+            saveBills();
+            renderAll();
+        };
+
+        function savePaycheckSettingsFromForm() {
+            settings = {
+                paycheckAmount: els.paycheckAmount.value,
+                nextPayDate: els.nextPayDate.value || getNextFridayISO(),
+                payFrequency: els.payFrequency.value
+            };
+
+            saveSettings();
+            renderAll();
+        }
+
+        function fillSettingsForm() {
+            els.paycheckAmount.value = settings.paycheckAmount || "";
+            els.nextPayDate.value = settings.nextPayDate || getNextFridayISO();
+            els.payFrequency.value = settings.payFrequency || "biweekly";
+        }
+
+        function handleBillPickChange() {
+            const value = els.billPick.value;
+
+            if (value === "__custom__") {
+                els.customBillName.classList.remove("hide");
+                els.customBillName.focus();
+                els.amount.value = "";
+                els.dueDay.value = "";
+                return;
+            }
+
+            els.customBillName.classList.add("hide");
+            els.customBillName.value = "";
+
+            const existing = bills.find(b => b.name === value);
+
+            if (existing) {
+                els.amount.value = existing.amount;
+                els.dueDay.value = existing.day;
+            }
+        }
+
+        function changeMonth(amount) {
+            calendarCursor = new Date(
+                calendarCursor.getFullYear(),
+                calendarCursor.getMonth() + amount,
+                1
+            );
+
+            const daysInNewMonth = new Date(
+                calendarCursor.getFullYear(),
+                calendarCursor.getMonth() + 1,
+                0
+            ).getDate();
+
+            selectedDay = Math.min(selectedDay, daysInNewMonth);
+            renderCalendar();
+        }
+
+        let swipeStartX = 0;
+
+        els.calendarGrid.addEventListener("touchstart", e => {
+            swipeStartX = e.changedTouches[0].clientX;
+        }, { passive: true });
+
+        els.calendarGrid.addEventListener("touchend", e => {
+            const swipeEndX = e.changedTouches[0].clientX;
+            const diff = swipeEndX - swipeStartX;
+
+            if (Math.abs(diff) < 45) return;
+
+            if (diff < 0) {
+                changeMonth(1);
+            } else {
+                changeMonth(-1);
+            }
+        }, { passive: true });
+
+        els.prevMonthBtn.addEventListener("click", () => changeMonth(-1));
+        els.nextMonthBtn.addEventListener("click", () => changeMonth(1));
+        els.saveBillBtn.addEventListener("click", saveBillFromForm);
+        els.savePaycheckBtn.addEventListener("click", savePaycheckSettingsFromForm);
+        els.billPick.addEventListener("change", handleBillPickChange);
+
+        fillSettingsForm();
+        renderAll();
     </script>
 </body>
 </html>
