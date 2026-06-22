@@ -18,18 +18,21 @@
             --bg1: #eafbe7;
             --bg2: #e7f3ff;
             --bg3: #ffe8f1;
-            --card: rgba(255, 255, 255, 0.86);
+
             --text: #343045;
             --muted: #7a738a;
+
             --pink: #f7a6c6;
             --blue: #9ec9ff;
             --green: #aee8be;
             --yellow: #ffe6a7;
             --purple: #cdb6ff;
+
             --redText: #c94b5f;
             --greenText: #1f9d63;
-            --cushionBox: rgba(255, 230, 167, 0.75);
+            --cushionBox: rgba(255, 230, 167, 0.78);
             --cushionText: #b87900;
+
             --border: rgba(90, 80, 110, 0.16);
             --shadow: 0 14px 35px rgba(90, 80, 110, 0.16);
             --radius: 24px;
@@ -81,7 +84,6 @@
         }
 
         .card {
-            background: var(--card);
             border: 1px solid var(--border);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
@@ -89,6 +91,30 @@
             margin-bottom: 16px;
             backdrop-filter: blur(10px);
             overflow: hidden;
+        }
+
+        .card-calendar {
+            background: linear-gradient(135deg, rgba(232, 250, 238, 0.92), rgba(231, 243, 255, 0.92));
+        }
+
+        .card-next {
+            background: linear-gradient(135deg, rgba(233, 226, 255, 0.9), rgba(226, 244, 255, 0.9));
+        }
+
+        .card-bills {
+            background: linear-gradient(135deg, rgba(230, 250, 232, 0.9), rgba(255, 248, 221, 0.9));
+        }
+
+        .card-add {
+            background: linear-gradient(135deg, rgba(255, 235, 244, 0.92), rgba(239, 231, 255, 0.9));
+        }
+
+        .card-setup {
+            background: linear-gradient(135deg, rgba(255, 246, 216, 0.92), rgba(232, 250, 238, 0.88));
+        }
+
+        .card-backup {
+            background: linear-gradient(135deg, rgba(231, 243, 255, 0.92), rgba(255, 235, 244, 0.86));
         }
 
         .section-title {
@@ -111,7 +137,7 @@
         }
 
         .warning-text {
-            color: var(--redText);
+            color: var(--cushionText);
             font-weight: 800;
         }
 
@@ -142,7 +168,7 @@
         }
 
         .backup-btn {
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.7);
             border: 1px solid var(--border);
             box-shadow: none;
         }
@@ -172,7 +198,7 @@
         select {
             width: 100%;
             border: 1px solid var(--border);
-            background: rgba(255, 255, 255, 0.88);
+            background: rgba(255, 255, 255, 0.82);
             color: var(--text);
             border-radius: 16px;
             padding: 13px 14px;
@@ -208,7 +234,7 @@
         .calendar-head button {
             padding: 11px 0;
             border-radius: 16px;
-            background: white;
+            background: rgba(255, 255, 255, 0.72);
             border: 1px solid var(--border);
             box-shadow: none;
             font-size: 20px;
@@ -246,8 +272,8 @@
             aspect-ratio: 1 / 1;
             padding: 0;
             border-radius: 16px;
-            background: rgba(255, 255, 255, 0.66);
-            border: 1px solid rgba(255, 255, 255, 0.55);
+            background: rgba(255, 255, 255, 0.58);
+            border: 1px solid rgba(255, 255, 255, 0.72);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -266,7 +292,7 @@
 
         .day.today {
             outline: 3px solid rgba(247, 166, 198, 0.55);
-            background: #fff4f8;
+            background: rgba(255, 244, 248, 0.88);
         }
 
         .day.selected {
@@ -296,7 +322,7 @@
 
         .selected-day-box {
             margin-top: 12px;
-            background: rgba(255, 255, 255, 0.66);
+            background: rgba(255, 255, 255, 0.58);
             border: 1px solid var(--border);
             border-radius: 18px;
             padding: 12px;
@@ -337,7 +363,7 @@
             overflow: hidden;
             border-radius: 18px;
             border: 1px solid var(--border);
-            background: rgba(255, 255, 255, 0.68);
+            background: rgba(255, 255, 255, 0.52);
         }
 
         table {
@@ -350,7 +376,7 @@
             text-transform: uppercase;
             letter-spacing: 0.04em;
             color: var(--muted);
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.58);
         }
 
         th,
@@ -377,11 +403,26 @@
         }
 
         .paycheck-card {
-            background: rgba(255, 255, 255, 0.72);
             border: 1px solid var(--border);
             border-radius: 20px;
             padding: 14px;
             margin-top: 12px;
+        }
+
+        .paycheck-color-1 {
+            background: linear-gradient(135deg, rgba(255, 238, 246, 0.92), rgba(248, 231, 255, 0.86));
+        }
+
+        .paycheck-color-2 {
+            background: linear-gradient(135deg, rgba(230, 244, 255, 0.92), rgba(235, 250, 238, 0.86));
+        }
+
+        .paycheck-color-3 {
+            background: linear-gradient(135deg, rgba(255, 248, 220, 0.92), rgba(232, 244, 255, 0.86));
+        }
+
+        .paycheck-color-4 {
+            background: linear-gradient(135deg, rgba(238, 232, 255, 0.92), rgba(255, 238, 246, 0.86));
         }
 
         .paycheck-top {
@@ -401,7 +442,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: #eef7ff;
+            background: rgba(255, 255, 255, 0.62);
             color: #38658f;
             border-radius: 999px;
             padding: 6px 10px;
@@ -418,7 +459,7 @@
         }
 
         .mini-box {
-            background: rgba(255, 255, 255, 0.72);
+            background: rgba(255, 255, 255, 0.62);
             border-radius: 16px;
             padding: 10px;
             border: 1px solid rgba(90, 80, 110, 0.1);
@@ -545,7 +586,7 @@
             <p id="todayLine">Your monthly bills and paycheck plan</p>
         </header>
 
-        <section class="card">
+        <section class="card card-calendar">
             <div class="calendar-head">
                 <button id="prevMonthBtn" aria-label="Previous month">‹</button>
                 <div id="monthTitle">Month 2026</div>
@@ -560,17 +601,17 @@
             </div>
         </section>
 
-        <section class="card">
+        <section class="card card-next">
             <h2 class="section-title">Next 4 Paychecks</h2>
             <div id="paycheckArea"></div>
         </section>
 
-        <section class="card">
+        <section class="card card-bills">
             <h2 class="section-title">My Bills</h2>
             <div id="billTableArea"></div>
         </section>
 
-        <section class="card" id="addBillSection">
+        <section class="card card-add" id="addBillSection">
             <h2 class="section-title">Add or Edit Bills</h2>
 
             <div class="form-grid">
@@ -614,7 +655,7 @@
             </div>
         </section>
 
-        <section class="card">
+        <section class="card card-setup">
             <h2 class="section-title">Paycheck Setup</h2>
 
             <div class="form-grid">
@@ -639,7 +680,7 @@
             </div>
         </section>
 
-        <section class="card">
+        <section class="card card-backup">
             <h2 class="section-title">Backup / Restore</h2>
 
             <div class="form-grid">
@@ -914,6 +955,107 @@
             return d;
         }
 
+        function getPreviousPayDateBefore(date, frequency) {
+            const d = new Date(date);
+
+            if (frequency === "weekly") {
+                d.setDate(d.getDate() - 7);
+                return d;
+            }
+
+            if (frequency === "biweekly") {
+                d.setDate(d.getDate() - 14);
+                return d;
+            }
+
+            if (frequency === "monthly") {
+                return addMonthsClamped(d, -1);
+            }
+
+            if (frequency === "semimonthly") {
+                if (d.getDate() > 15) {
+                    return new Date(d.getFullYear(), d.getMonth(), 15);
+                }
+
+                if (d.getDate() > 1) {
+                    return new Date(d.getFullYear(), d.getMonth(), 1);
+                }
+
+                return new Date(d.getFullYear(), d.getMonth() - 1, 15);
+            }
+
+            d.setDate(d.getDate() - 14);
+            return d;
+        }
+
+        function buildPaycheckForDate(date) {
+            const next = getNextPayDateAfter(date, settings.payFrequency);
+            const check = {
+                date,
+                nextDate: next,
+                bills: getBillOccurrencesInRange(date, next),
+                totalBills: 0,
+                baseLeftover: null,
+                cushionFromPrevious: 0,
+                holdForNext: 0,
+                plannedLeftover: null,
+                warning: ""
+            };
+
+            const payAmount = Number(settings.paycheckAmount || 0);
+            check.totalBills = check.bills.reduce((sum, bill) => sum + Number(bill.amount || 0), 0);
+            check.baseLeftover = payAmount ? payAmount - check.totalBills : null;
+            check.plannedLeftover = check.baseLeftover;
+
+            return check;
+        }
+
+        function getPaychecksInRange(rangeStart, rangeEnd) {
+            const start = startOfDay(rangeStart);
+            const end = startOfDay(rangeEnd);
+            const frequency = settings.payFrequency || "biweekly";
+
+            if (frequency === "semimonthly") {
+                const results = [];
+                let cursor = new Date(start.getFullYear(), start.getMonth() - 1, 1);
+                const limit = new Date(end.getFullYear(), end.getMonth() + 2, 1);
+
+                while (cursor < limit) {
+                    const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+                    const fifteenth = new Date(cursor.getFullYear(), cursor.getMonth(), 15);
+
+                    [first, fifteenth].forEach(payDate => {
+                        if (payDate >= start && payDate < end) {
+                            results.push(buildPaycheckForDate(payDate));
+                        }
+                    });
+
+                    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+                }
+
+                return results.sort((a, b) => a.date - b.date);
+            }
+
+            let current = parseISODate(settings.nextPayDate) || parseISODate(getNextFridayISO());
+
+            while (current > start) {
+                current = getPreviousPayDateBefore(current, frequency);
+            }
+
+            while (current < start) {
+                current = getNextPayDateAfter(current, frequency);
+            }
+
+            const results = [];
+
+            while (current < end) {
+                results.push(buildPaycheckForDate(new Date(current)));
+                current = getNextPayDateAfter(current, frequency);
+            }
+
+            return results;
+        }
+
         function getNextFourPaychecks() {
             let first = parseISODate(settings.nextPayDate) || parseISODate(getNextFridayISO());
 
@@ -1026,11 +1168,15 @@
         }
 
         function getPaychecksOnCalendarDay(year, monthIndex, day) {
-            return getNextFourPaychecks().filter(check =>
-                check.date.getFullYear() === year &&
-                check.date.getMonth() === monthIndex &&
-                check.date.getDate() === day
-            );
+            const start = new Date(year, monthIndex, day);
+            const end = new Date(year, monthIndex, day + 1);
+            const calendarChecks = getPaychecksInRange(start, end);
+            const smartChecks = getNextFourPaychecks();
+
+            return calendarChecks.map(check => {
+                const smartMatch = smartChecks.find(smart => sameDay(smart.date, check.date));
+                return smartMatch || check;
+            });
         }
 
         function renderBillPickOptions() {
@@ -1083,6 +1229,10 @@
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
 
+            const monthStart = new Date(year, month, 1);
+            const monthEnd = new Date(year, month + 1, 1);
+            const paychecksThisMonth = getPaychecksInRange(monthStart, monthEnd);
+
             for (let i = 0; i < firstDay; i++) {
                 const blank = document.createElement("div");
                 blank.className = "day blank";
@@ -1096,7 +1246,7 @@
 
                 const cellDate = new Date(year, month, day);
                 const dueBills = getBillsDueOnCalendarDay(year, month, day);
-                const paychecks = getPaychecksOnCalendarDay(year, month, day);
+                const paychecks = paychecksThisMonth.filter(check => sameDay(check.date, cellDate));
 
                 if (sameDay(cellDate, today)) cell.classList.add("today");
                 if (day === selectedDay) cell.classList.add("selected");
@@ -1138,7 +1288,11 @@
 
             if (paychecks.length) {
                 paychecks.forEach(check => {
+                    const periodEnd = new Date(check.nextDate);
+                    periodEnd.setDate(periodEnd.getDate() - 1);
+
                     html += `<br><br><strong>Pay these bills from this paycheck:</strong>`;
+                    html += `<div class="small-note">Covers ${formatDate(check.date)} through ${formatDate(periodEnd)}</div>`;
 
                     if (!check.bills.length && !check.holdForNext) {
                         html += `<br>No bills are assigned to this paycheck.`;
@@ -1265,7 +1419,7 @@
                 periodEnd.setDate(periodEnd.getDate() - 1);
 
                 html += `
-                    <div class="paycheck-card">
+                    <div class="paycheck-card paycheck-color-${index + 1}">
                         <div class="paycheck-top">
                             <div>
                                 <div class="paycheck-date">${formatDate(check.date)}</div>
@@ -1527,7 +1681,7 @@
         function exportBackup() {
             const backup = {
                 app: "My Bills",
-                version: 5,
+                version: 6,
                 exportedAt: new Date().toISOString(),
                 bills,
                 settings
