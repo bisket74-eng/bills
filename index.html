@@ -7,9 +7,9 @@
 
     <style>
         :root {
-            --bg1: #ffe8f1;
+            --bg1: #eafbe7;
             --bg2: #e7f3ff;
-            --bg3: #eafbe7;
+            --bg3: #ffe8f1;
             --card: rgba(255, 255, 255, 0.86);
             --text: #343045;
             --muted: #7a738a;
@@ -73,6 +73,7 @@
             padding: 16px;
             margin-bottom: 16px;
             backdrop-filter: blur(10px);
+            overflow: hidden;
         }
 
         .section-title {
@@ -125,6 +126,12 @@
             color: white;
         }
 
+        .backup-btn {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            box-shadow: none;
+        }
+
         .danger-btn {
             background: #ffd0d0;
             color: #8a2c2c;
@@ -169,6 +176,12 @@
             gap: 10px;
         }
 
+        .backup-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
         .calendar-head {
             display: grid;
             grid-template-columns: 48px 1fr 48px;
@@ -194,13 +207,16 @@
 
         .calendar-grid {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(7, minmax(0, 1fr));
             gap: 6px;
+            width: 100%;
+            overflow: hidden;
             touch-action: pan-y;
             user-select: none;
         }
 
         .dow {
+            min-width: 0;
             text-align: center;
             font-size: 12px;
             color: var(--muted);
@@ -209,7 +225,11 @@
         }
 
         .day {
-            min-height: 48px;
+            width: 100%;
+            min-width: 0;
+            min-height: 0;
+            aspect-ratio: 1 / 1;
+            padding: 0;
             border-radius: 16px;
             background: rgba(255, 255, 255, 0.66);
             border: 1px solid rgba(255, 255, 255, 0.55);
@@ -220,6 +240,7 @@
             gap: 3px;
             font-weight: 800;
             position: relative;
+            box-shadow: none;
         }
 
         .day.blank {
@@ -437,7 +458,6 @@
             }
 
             .day {
-                min-height: 43px;
                 border-radius: 14px;
                 font-size: 14px;
             }
@@ -460,6 +480,10 @@
                 grid-template-columns: 48px 1fr auto;
                 font-size: 13px;
             }
+
+            .backup-row {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -467,11 +491,10 @@
 <body>
     <main class="app">
         <header class="top-header">
-            <h1>Bill Tracker</h1>
-            <p id="todayLine">Your monthly bills and paycheck plan</p>
+            <h1>My Bills</h1>
+            <p id="todayLine">A monthly bills and paycheck plan</p>
         </header>
 
-        <!-- 1. Calendar -->
         <section class="card">
             <div class="calendar-head">
                 <button id="prevMonthBtn" aria-label="Previous month">‹</button>
@@ -487,19 +510,16 @@
             </div>
         </section>
 
-        <!-- 2. Next 4 Paychecks -->
         <section class="card">
             <h2 class="section-title">Next 4 Paychecks</h2>
             <div id="paycheckArea"></div>
         </section>
 
-        <!-- 3. My Bills -->
         <section class="card">
             <h2 class="section-title">My Bills</h2>
             <div id="billTableArea"></div>
         </section>
 
-        <!-- 4. Add or Edit Bills -->
         <section class="card" id="addBillSection">
             <h2 class="section-title">Add or Edit Bills</h2>
 
@@ -544,7 +564,6 @@
             </div>
         </section>
 
-        <!-- 5. Paycheck Setup -->
         <section class="card">
             <h2 class="section-title">Paycheck Setup</h2>
 
@@ -566,6 +585,24 @@
                 <p class="small-note">
                     The smart area keeps a $300 cushion target. If a future paycheck comes up short,
                     the previous paycheck will tell you how much to hold back.
+                </p>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2 class="section-title">Backup / Restore</h2>
+
+            <div class="form-grid">
+                <div class="backup-row">
+                    <button id="exportBtn" class="backup-btn">Export Backup</button>
+                    <button id="importBtn" class="backup-btn">Import Backup</button>
+                </div>
+
+                <input id="importFile" class="hide" type="file" accept="application/json,.json" />
+
+                <p class="small-note">
+                    Export saves your bills and paycheck settings into a backup file.
+                    Import restores them later if browser data gets cleared or you move to another phone.
                 </p>
             </div>
         </section>
@@ -626,7 +663,10 @@
             nextPayDate: document.getElementById("nextPayDate"),
             payFrequency: document.getElementById("payFrequency"),
             savePaycheckBtn: document.getElementById("savePaycheckBtn"),
-            paycheckArea: document.getElementById("paycheckArea")
+            paycheckArea: document.getElementById("paycheckArea"),
+            exportBtn: document.getElementById("exportBtn"),
+            importBtn: document.getElementById("importBtn"),
+            importFile: document.getElementById("importFile")
         };
 
         function loadBills() {
@@ -802,14 +842,6 @@
             return difference % 2 === 0;
         }
 
-        function getBillFrequencyLabel(bill) {
-            if (bill.frequency === "every_other_month") {
-                return `Every other month, starting ${MONTH_NAMES[bill.startMonth]}`;
-            }
-
-            return "Monthly";
-        }
-
         function getNextPayDateAfter(date, frequency) {
             const d = new Date(date);
 
@@ -880,16 +912,7 @@
                 return checks;
             }
 
-            /*
-                Smart cushion logic:
-                This works backward from the 4th paycheck.
-                Each paycheck tries to finish with at least $300 after bills.
-                If a future check would fall below $300, the previous check is told to hold money back.
-                This cushion is NOT saved as a real bill.
-            */
-
-            const needFromPrevious = new Array(checks.length).fill(0);
-            const needBeforeFirstVisibleCheck = Math.max(0, CUSHION_TARGET - checks[0].baseLeftover);
+            const needFromPrevious = new Array(checks.length + 1).fill(0);
 
             for (let i = checks.length - 1; i >= 1; i--) {
                 const amountThisCheckMustAlsoHoldForNext = needFromPrevious[i + 1] || 0;
@@ -909,10 +932,6 @@
                     check.warning = `This first visible paycheck is still short by ${formatMoney(shortage)} because there is no earlier paycheck shown to pull from.`;
                 }
             });
-
-            if (needBeforeFirstVisibleCheck > 0 && checks[0] && !checks[0].warning) {
-                checks[0].warning = `This first visible paycheck starts short by ${formatMoney(needBeforeFirstVisibleCheck)} before any cushion planning.`;
-            }
 
             return checks;
         }
@@ -1216,7 +1235,7 @@
                             <li>
                                 <span>${bill.dueDate.getMonth() + 1}/${bill.dueDate.getDate()}</span>
                                 <span>${escapeHTML(bill.name)}</span>
-                                <strong>${formatMoney(bill.amount)}</strong>
+                                <strong class="red-money">${formatMoney(bill.amount)}</strong>
                             </li>
                         `;
                     });
@@ -1413,6 +1432,87 @@
             }
         }
 
+        function exportBackup() {
+            const backup = {
+                app: "Bill Tracker",
+                version: 3,
+                exportedAt: new Date().toISOString(),
+                bills,
+                settings
+            };
+
+            const text = JSON.stringify(backup, null, 2);
+            const blob = new Blob([text], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+
+            const dateStamp = toISODate(new Date());
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `bill-tracker-backup-${dateStamp}.json`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            URL.revokeObjectURL(url);
+        }
+
+        function importBackupFile(file) {
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                try {
+                    const imported = JSON.parse(event.target.result);
+
+                    let importedBills = [];
+                    let importedSettings = null;
+
+                    if (Array.isArray(imported)) {
+                        importedBills = imported;
+                    } else if (imported && Array.isArray(imported.bills)) {
+                        importedBills = imported.bills;
+                        importedSettings = imported.settings || null;
+                    } else {
+                        alert("This backup file does not look like a Bill Tracker backup.");
+                        return;
+                    }
+
+                    const cleanedBills = importedBills
+                        .map(normalizeBill)
+                        .filter(isValidBill);
+
+                    if (!cleanedBills.length) {
+                        const okEmpty = confirm("This backup has no bills in it. Import anyway and clear your current bills?");
+                        if (!okEmpty) return;
+                    } else {
+                        const ok = confirm(`Import ${cleanedBills.length} bills? This will replace your current saved bills.`);
+                        if (!ok) return;
+                    }
+
+                    bills = cleanedBills;
+
+                    if (importedSettings) {
+                        settings = {
+                            ...loadSettings(),
+                            ...importedSettings
+                        };
+                    }
+
+                    saveBills();
+                    saveSettings();
+                    fillSettingsForm();
+                    renderAll();
+
+                    alert("Backup imported successfully.");
+                } catch {
+                    alert("Could not read that backup file. Make sure it is the .json backup file you exported.");
+                } finally {
+                    els.importFile.value = "";
+                }
+            };
+
+            reader.readAsText(file);
+        }
+
         function changeMonth(amount) {
             calendarCursor = new Date(
                 calendarCursor.getFullYear(),
@@ -1455,6 +1555,17 @@
         els.savePaycheckBtn.addEventListener("click", savePaycheckSettingsFromForm);
         els.billPick.addEventListener("change", handleBillPickChange);
         els.billFrequency.addEventListener("change", handleFrequencyChange);
+
+        els.exportBtn.addEventListener("click", exportBackup);
+
+        els.importBtn.addEventListener("click", () => {
+            els.importFile.click();
+        });
+
+        els.importFile.addEventListener("change", () => {
+            const file = els.importFile.files && els.importFile.files[0];
+            if (file) importBackupFile(file);
+        });
 
         els.startMonth.value = today.getMonth();
 
