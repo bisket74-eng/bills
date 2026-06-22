@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Bill Tracker</title>
+    <title>My Bills</title>
+
+    <!-- Web app / PWA hooks -->
+    <meta name="theme-color" content="#eafbe7" />
+    <meta name="application-name" content="My Bills" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="My Bills" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="manifest" href="./manifest.webmanifest" />
 
     <style>
         :root {
@@ -50,19 +59,24 @@
         }
 
         .top-header {
-            padding: 12px 4px 16px;
+            padding: 18px 4px 18px;
+            text-align: center;
         }
 
         .top-header h1 {
             margin: 0;
-            font-size: 34px;
+            font-size: 44px;
+            line-height: 1.05;
             letter-spacing: -1px;
+            font-family: "Segoe Print", "Trebuchet MS", "Bradley Hand", cursive;
+            font-weight: 800;
         }
 
         .top-header p {
-            margin: 4px 0 0;
+            margin: 8px 0 0;
             color: var(--muted);
-            font-size: 14px;
+            font-size: 15px;
+            text-align: center;
         }
 
         .card {
@@ -292,6 +306,32 @@
             margin-bottom: 5px;
         }
 
+        .selected-pay-list {
+            margin: 8px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .selected-pay-list li {
+            display: grid;
+            grid-template-columns: 48px 1fr auto;
+            gap: 8px;
+            padding: 7px 0;
+            border-top: 1px solid rgba(90, 80, 110, 0.12);
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .selected-total-line {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(90, 80, 110, 0.14);
+            font-weight: 900;
+        }
+
         .table-wrap {
             overflow: hidden;
             border-radius: 18px;
@@ -450,7 +490,7 @@
             }
 
             .top-header h1 {
-                font-size: 30px;
+                font-size: 40px;
             }
 
             .card {
@@ -492,7 +532,7 @@
     <main class="app">
         <header class="top-header">
             <h1>My Bills</h1>
-            <p id="todayLine">A monthly bills and paycheck plan</p>
+            <p id="todayLine">Your monthly bills and paycheck plan</p>
         </header>
 
         <section class="card">
@@ -632,11 +672,6 @@
             "Other"
         ];
 
-        const MONTH_NAMES = [
-            "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December"
-        ];
-
         const today = startOfDay(new Date());
 
         let bills = loadBills();
@@ -674,9 +709,7 @@
 
             if (saved) {
                 try {
-                    return JSON.parse(saved)
-                        .map(normalizeBill)
-                        .filter(isValidBill);
+                    return JSON.parse(saved).map(normalizeBill).filter(isValidBill);
                 } catch {
                     return [];
                 }
@@ -883,6 +916,7 @@
 
             for (let i = 0; i < 4; i++) {
                 const next = getNextPayDateAfter(current, settings.payFrequency);
+
                 checks.push({
                     date: current,
                     nextDate: next,
@@ -894,6 +928,7 @@
                     plannedLeftover: null,
                     warning: ""
                 });
+
                 current = next;
             }
 
@@ -1083,6 +1118,7 @@
             const selectedDate = new Date(year, month, selectedDay);
             const dueBills = getBillsDueOnCalendarDay(year, month, selectedDay);
             const paychecks = getPaychecksOnCalendarDay(year, month, selectedDay);
+            const payAmount = Number(settings.paycheckAmount || 0);
 
             let html = `${formatDate(selectedDate)}`;
 
@@ -1091,11 +1127,57 @@
             }
 
             if (paychecks.length) {
-                html += `<br><br><strong>Paycheck day</strong>`;
+                paychecks.forEach(check => {
+                    html += `<br><br><strong>Pay these bills from this paycheck:</strong>`;
+
+                    if (!check.bills.length && !check.holdForNext) {
+                        html += `<br>No bills are assigned to this paycheck.`;
+                    } else {
+                        html += `<ul class="selected-pay-list">`;
+
+                        check.bills.forEach(bill => {
+                            html += `
+                                <li>
+                                    <span>${bill.dueDate.getMonth() + 1}/${bill.dueDate.getDate()}</span>
+                                    <span>${escapeHTML(bill.name)}</span>
+                                    <strong class="red-money">${formatMoney(bill.amount)}</strong>
+                                </li>
+                            `;
+                        });
+
+                        if (check.holdForNext > 0) {
+                            html += `
+                                <li class="cushion-line">
+                                    <span>Hold</span>
+                                    <span>Next paycheck cushion</span>
+                                    <strong>${formatMoney(check.holdForNext)}</strong>
+                                </li>
+                            `;
+                        }
+
+                        html += `</ul>`;
+                    }
+
+                    html += `
+                        <div class="selected-total-line">
+                            <span>Total bills</span>
+                            <span class="red-money">${formatMoney(check.totalBills)}</span>
+                        </div>
+                    `;
+
+                    if (payAmount) {
+                        html += `
+                            <div class="selected-total-line">
+                                <span>Left after bills/cushion</span>
+                                <span class="green-money">${formatMoney(check.plannedLeftover)}</span>
+                            </div>
+                        `;
+                    }
+                });
             }
 
-            if (dueBills.length) {
-                html += `<br><br><strong>Bills due:</strong>`;
+            if (dueBills.length && !paychecks.length) {
+                html += `<br><br><strong>Bills due this day:</strong>`;
                 html += `<ul style="margin: 6px 0 0; padding-left: 18px;">`;
                 dueBills.forEach(bill => {
                     html += `<li>${escapeHTML(bill.name)} — ${formatMoney(bill.amount)}</li>`;
@@ -1434,8 +1516,8 @@
 
         function exportBackup() {
             const backup = {
-                app: "Bill Tracker",
-                version: 3,
+                app: "My Bills",
+                version: 4,
                 exportedAt: new Date().toISOString(),
                 bills,
                 settings
@@ -1448,7 +1530,7 @@
             const dateStamp = toISODate(new Date());
             const link = document.createElement("a");
             link.href = url;
-            link.download = `bill-tracker-backup-${dateStamp}.json`;
+            link.download = `my-bills-backup-${dateStamp}.json`;
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -1472,7 +1554,7 @@
                         importedBills = imported.bills;
                         importedSettings = imported.settings || null;
                     } else {
-                        alert("This backup file does not look like a Bill Tracker backup.");
+                        alert("This backup file does not look like a My Bills backup.");
                         return;
                     }
 
@@ -1568,6 +1650,12 @@
         });
 
         els.startMonth.value = today.getMonth();
+
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", () => {
+                navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+            });
+        }
 
         fillSettingsForm();
         renderAll();
