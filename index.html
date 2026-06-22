@@ -216,6 +216,7 @@
         .day.blank {
             background: transparent;
             border: none;
+            box-shadow: none;
         }
 
         .day.today {
@@ -421,6 +422,11 @@
             .paycheck-summary {
                 grid-template-columns: 1fr;
             }
+
+            .tiny-list li {
+                grid-template-columns: 48px 1fr auto;
+                font-size: 13px;
+            }
         }
     </style>
 </head>
@@ -432,6 +438,7 @@
             <p id="todayLine">Your monthly bills and paycheck plan</p>
         </header>
 
+        <!-- 1. Calendar -->
         <section class="card">
             <div class="calendar-head">
                 <button id="prevMonthBtn" aria-label="Previous month">‹</button>
@@ -447,8 +454,21 @@
             </div>
         </section>
 
+        <!-- 2. Next 4 Paychecks -->
         <section class="card">
-            <h2 class="section-title">Add or Update a Bill</h2>
+            <h2 class="section-title">Next 4 Paychecks</h2>
+            <div id="paycheckArea"></div>
+        </section>
+
+        <!-- 3. My Bills -->
+        <section class="card">
+            <h2 class="section-title">My Bills</h2>
+            <div id="billTableArea"></div>
+        </section>
+
+        <!-- 4. Add or Edit Bills -->
+        <section class="card" id="addBillSection">
+            <h2 class="section-title">Add or Edit Bills</h2>
 
             <div class="form-grid">
                 <select id="billPick">
@@ -462,20 +482,36 @@
                     <input id="dueDay" type="number" inputmode="numeric" min="1" max="31" placeholder="Due day" />
                 </div>
 
+                <select id="billFrequency">
+                    <option value="monthly">Monthly</option>
+                    <option value="every_other_month">Every other month</option>
+                </select>
+
+                <select id="startMonth" class="hide">
+                    <option value="0">Every other month starting in January</option>
+                    <option value="1">Every other month starting in February</option>
+                    <option value="2">Every other month starting in March</option>
+                    <option value="3">Every other month starting in April</option>
+                    <option value="4">Every other month starting in May</option>
+                    <option value="5">Every other month starting in June</option>
+                    <option value="6">Every other month starting in July</option>
+                    <option value="7">Every other month starting in August</option>
+                    <option value="8">Every other month starting in September</option>
+                    <option value="9">Every other month starting in October</option>
+                    <option value="10">Every other month starting in November</option>
+                    <option value="11">Every other month starting in December</option>
+                </select>
+
                 <button id="saveBillBtn" class="primary-btn">Save Bill</button>
+
                 <p class="small-note">
-                    Pick a bill, enter the amount and the day of the month it is due, then save it.
-                    If the same bill already exists, it will update it.
+                    For bills that are due every other month, choose the month the pattern starts in.
+                    Example: starting in January means January, March, May, July, September, and November.
                 </p>
             </div>
         </section>
 
-        <section class="card">
-            <h2 class="section-title">My Bills</h2>
-
-            <div id="billTableArea"></div>
-        </section>
-
+        <!-- 5. Paycheck Setup -->
         <section class="card">
             <h2 class="section-title">Paycheck Setup</h2>
 
@@ -495,14 +531,9 @@
                 <button id="savePaycheckBtn" class="primary-btn">Save Paycheck Settings</button>
 
                 <p class="small-note">
-                    The smart area below looks at each paycheck date and assigns bills that are due before the next paycheck.
+                    The smart area looks at each paycheck date and assigns bills due before the next paycheck.
                 </p>
             </div>
-        </section>
-
-        <section class="card">
-            <h2 class="section-title">Next 4 Paychecks</h2>
-            <div id="paycheckArea"></div>
         </section>
     </main>
 
@@ -529,6 +560,11 @@
             "Other"
         ];
 
+        const MONTH_NAMES = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+
         const today = startOfDay(new Date());
 
         let bills = loadBills();
@@ -547,6 +583,8 @@
             customBillName: document.getElementById("customBillName"),
             amount: document.getElementById("amount"),
             dueDay: document.getElementById("dueDay"),
+            billFrequency: document.getElementById("billFrequency"),
+            startMonth: document.getElementById("startMonth"),
             saveBillBtn: document.getElementById("saveBillBtn"),
             billTableArea: document.getElementById("billTableArea"),
             paycheckAmount: document.getElementById("paycheckAmount"),
@@ -561,7 +599,9 @@
 
             if (saved) {
                 try {
-                    return JSON.parse(saved).filter(isValidBill);
+                    return JSON.parse(saved)
+                        .map(normalizeBill)
+                        .filter(isValidBill);
                 } catch {
                     return [];
                 }
@@ -572,11 +612,11 @@
             if (oldSaved) {
                 try {
                     const imported = JSON.parse(oldSaved)
-                        .map(b => ({
+                        .map(b => normalizeBill({
                             id: makeId(),
-                            name: String(b.name || "").trim(),
-                            amount: Number(b.amount || 0),
-                            day: Number(b.day || 1)
+                            name: b.name,
+                            amount: b.amount,
+                            day: b.day
                         }))
                         .filter(isValidBill);
 
@@ -588,6 +628,24 @@
             }
 
             return [];
+        }
+
+        function normalizeBill(b) {
+            const frequency = b.frequency === "every_other_month" ? "every_other_month" : "monthly";
+            let startMonth = Number(b.startMonth);
+
+            if (!Number.isInteger(startMonth) || startMonth < 0 || startMonth > 11) {
+                startMonth = today.getMonth();
+            }
+
+            return {
+                id: b.id || makeId(),
+                name: String(b.name || "").trim(),
+                amount: Number(b.amount || 0),
+                day: Number(b.day || 1),
+                frequency,
+                startMonth
+            };
         }
 
         function loadSettings() {
@@ -700,6 +758,23 @@
             return target;
         }
 
+        function billOccursInMonth(bill, year, monthIndex) {
+            if (bill.frequency !== "every_other_month") {
+                return true;
+            }
+
+            const difference = (monthIndex - Number(bill.startMonth) + 12) % 12;
+            return difference % 2 === 0;
+        }
+
+        function getBillFrequencyLabel(bill) {
+            if (bill.frequency === "every_other_month") {
+                return `Every other month, starting ${MONTH_NAMES[bill.startMonth]}`;
+            }
+
+            return "Monthly";
+        }
+
         function getNextPayDateAfter(date, frequency) {
             const d = new Date(date);
 
@@ -754,23 +829,28 @@
 
         function getBillOccurrencesInRange(start, endExclusive) {
             const results = [];
-            const monthCursor = new Date(start.getFullYear(), start.getMonth() - 1, 1);
+            const monthCursor = new Date(start.getFullYear(), start.getMonth(), 1);
             const monthLimit = new Date(endExclusive.getFullYear(), endExclusive.getMonth() + 1, 1);
 
             bills.forEach(bill => {
                 let cursor = new Date(monthCursor);
 
-                while (cursor <= monthLimit) {
-                    const dueDate = safeDueDate(cursor.getFullYear(), cursor.getMonth(), bill.day);
+                while (cursor < monthLimit) {
+                    const year = cursor.getFullYear();
+                    const monthIndex = cursor.getMonth();
 
-                    if (dueDate >= start && dueDate < endExclusive) {
-                        results.push({
-                            ...bill,
-                            dueDate
-                        });
+                    if (billOccursInMonth(bill, year, monthIndex)) {
+                        const dueDate = safeDueDate(year, monthIndex, bill.day);
+
+                        if (dueDate >= start && dueDate < endExclusive) {
+                            results.push({
+                                ...bill,
+                                dueDate
+                            });
+                        }
                     }
 
-                    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+                    cursor = new Date(year, monthIndex + 1, 1);
                 }
             });
 
@@ -782,6 +862,10 @@
 
         function getBillsDueOnCalendarDay(year, monthIndex, day) {
             return bills.filter(bill => {
+                if (!billOccursInMonth(bill, year, monthIndex)) {
+                    return false;
+                }
+
                 const dueDate = safeDueDate(year, monthIndex, bill.day);
                 return dueDate.getDate() === day;
             });
@@ -917,7 +1001,7 @@
             if (!bills.length) {
                 els.billTableArea.innerHTML = `
                     <div class="empty">
-                        No bills saved yet. Add your first bill above.
+                        No bills saved yet. Add your first bill below.
                     </div>
                 `;
                 return;
@@ -936,6 +1020,7 @@
                                 <th>Day</th>
                                 <th>Bill</th>
                                 <th>Amount</th>
+                                <th>Every</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -948,6 +1033,7 @@
                         <td>${bill.day}</td>
                         <td>${escapeHTML(bill.name)}</td>
                         <td class="amount">${formatMoney(bill.amount)}</td>
+                        <td>${bill.frequency === "every_other_month" ? "Other mo." : "Month"}</td>
                         <td>
                             <div class="bill-actions">
                                 <button class="edit-btn" onclick="editBill('${bill.id}')">Edit</button>
@@ -1031,8 +1117,8 @@
             els.todayLine.textContent = `Today is ${formatDate(today)}`;
             renderBillPickOptions();
             renderCalendar();
-            renderBillTable();
             renderPaychecks();
+            renderBillTable();
         }
 
         function saveBillFromForm() {
@@ -1044,6 +1130,8 @@
 
             const amount = Number(els.amount.value);
             const day = Number(els.dueDay.value);
+            const frequency = els.billFrequency.value;
+            const startMonth = Number(els.startMonth.value);
 
             if (!name) {
                 alert("Choose a bill or enter a custom bill name.");
@@ -1064,12 +1152,14 @@
                 b.name.trim().toLowerCase() === name.trim().toLowerCase()
             );
 
-            const billData = {
+            const billData = normalizeBill({
                 id: existingIndex >= 0 ? bills[existingIndex].id : makeId(),
                 name: name.trim(),
                 amount,
-                day
-            };
+                day,
+                frequency,
+                startMonth
+            });
 
             if (existingIndex >= 0) {
                 bills[existingIndex] = billData;
@@ -1084,6 +1174,9 @@
             els.customBillName.classList.add("hide");
             els.amount.value = "";
             els.dueDay.value = "";
+            els.billFrequency.value = "monthly";
+            els.startMonth.value = today.getMonth();
+            els.startMonth.classList.add("hide");
 
             renderAll();
         }
@@ -1108,10 +1201,18 @@
 
             els.amount.value = bill.amount;
             els.dueDay.value = bill.day;
+            els.billFrequency.value = bill.frequency || "monthly";
+            els.startMonth.value = Number.isInteger(Number(bill.startMonth)) ? bill.startMonth : today.getMonth();
 
-            window.scrollTo({
-                top: document.querySelector(".card:nth-of-type(2)").offsetTop - 10,
-                behavior: "smooth"
+            if (els.billFrequency.value === "every_other_month") {
+                els.startMonth.classList.remove("hide");
+            } else {
+                els.startMonth.classList.add("hide");
+            }
+
+            document.getElementById("addBillSection").scrollIntoView({
+                behavior: "smooth",
+                block: "start"
             });
         };
 
@@ -1152,6 +1253,9 @@
                 els.customBillName.focus();
                 els.amount.value = "";
                 els.dueDay.value = "";
+                els.billFrequency.value = "monthly";
+                els.startMonth.value = today.getMonth();
+                els.startMonth.classList.add("hide");
                 return;
             }
 
@@ -1163,6 +1267,22 @@
             if (existing) {
                 els.amount.value = existing.amount;
                 els.dueDay.value = existing.day;
+                els.billFrequency.value = existing.frequency || "monthly";
+                els.startMonth.value = Number.isInteger(Number(existing.startMonth)) ? existing.startMonth : today.getMonth();
+
+                if (els.billFrequency.value === "every_other_month") {
+                    els.startMonth.classList.remove("hide");
+                } else {
+                    els.startMonth.classList.add("hide");
+                }
+            }
+        }
+
+        function handleFrequencyChange() {
+            if (els.billFrequency.value === "every_other_month") {
+                els.startMonth.classList.remove("hide");
+            } else {
+                els.startMonth.classList.add("hide");
             }
         }
 
@@ -1207,6 +1327,9 @@
         els.saveBillBtn.addEventListener("click", saveBillFromForm);
         els.savePaycheckBtn.addEventListener("click", savePaycheckSettingsFromForm);
         els.billPick.addEventListener("change", handleBillPickChange);
+        els.billFrequency.addEventListener("change", handleFrequencyChange);
+
+        els.startMonth.value = today.getMonth();
 
         fillSettingsForm();
         renderAll();
