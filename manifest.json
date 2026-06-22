@@ -1,0 +1,11 @@
+{
+  "name": "My Bills",
+  "short_name": "My Bills",
+  "description": "Personal bill and paycheck tracker",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eafbe7",
+  "theme_color": "#eafbe7",
+  "orientation": "portrait"
+}
