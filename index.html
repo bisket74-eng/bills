@@ -407,22 +407,7 @@
             border-radius: 20px;
             padding: 14px;
             margin-top: 12px;
-        }
-
-        .paycheck-color-1 {
-            background: linear-gradient(135deg, rgba(255, 238, 246, 0.92), rgba(248, 231, 255, 0.86));
-        }
-
-        .paycheck-color-2 {
-            background: linear-gradient(135deg, rgba(230, 244, 255, 0.92), rgba(235, 250, 238, 0.86));
-        }
-
-        .paycheck-color-3 {
             background: linear-gradient(135deg, rgba(255, 248, 220, 0.92), rgba(232, 244, 255, 0.86));
-        }
-
-        .paycheck-color-4 {
-            background: linear-gradient(135deg, rgba(238, 232, 255, 0.92), rgba(255, 238, 246, 0.86));
         }
 
         .paycheck-top {
@@ -1419,7 +1404,7 @@
                 periodEnd.setDate(periodEnd.getDate() - 1);
 
                 html += `
-                    <div class="paycheck-card paycheck-color-${index + 1}">
+                    <div class="paycheck-card">
                         <div class="paycheck-top">
                             <div>
                                 <div class="paycheck-date">${formatDate(check.date)}</div>
@@ -1681,7 +1666,7 @@
         function exportBackup() {
             const backup = {
                 app: "My Bills",
-                version: 6,
+                version: 7,
                 exportedAt: new Date().toISOString(),
                 bills,
                 settings
