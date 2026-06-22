@@ -30,7 +30,6 @@
 
             --redText: #c94b5f;
             --greenText: #1f9d63;
-            --cushionBox: rgba(255, 230, 167, 0.78);
             --cushionText: #b87900;
 
             --border: rgba(90, 80, 110, 0.16);
@@ -138,11 +137,6 @@
 
         .cushion-money {
             color: var(--cushionText);
-        }
-
-        .warning-text {
-            color: var(--cushionText);
-            font-weight: 800;
         }
 
         button,
@@ -345,7 +339,7 @@
 
         .selected-pay-list li {
             display: grid;
-            grid-template-columns: 48px 1fr auto;
+            grid-template-columns: 54px 1fr auto;
             gap: 8px;
             padding: 7px 0;
             border-top: 1px solid rgba(90, 80, 110, 0.12);
@@ -532,8 +526,9 @@
                 grid-template-columns: 1fr;
             }
 
-            .tiny-list li {
-                grid-template-columns: 48px 1fr auto;
+            .tiny-list li,
+            .selected-pay-list li {
+                grid-template-columns: 50px 1fr auto;
                 font-size: 13px;
             }
 
@@ -554,7 +549,7 @@
         <section class="card card-calendar">
             <div class="calendar-head">
                 <button id="prevMonthBtn" aria-label="Previous month">‹</button>
-                <div id="monthTitle">Month 2026</div>
+                <div id="monthTitle">Month</div>
                 <button id="nextMonthBtn" aria-label="Next month">›</button>
             </div>
 
@@ -567,7 +562,7 @@
         </section>
 
         <section class="card card-next">
-            <h2 class="section-title">Next 4 Paychecks</h2>
+            <h2 class="section-title">Next 6 Paychecks</h2>
             <div id="paycheckArea"></div>
         </section>
 
@@ -594,28 +589,16 @@
                 <select id="billFrequency">
                     <option value="monthly">Monthly</option>
                     <option value="every_other_month">Every other month</option>
+                    <option value="yearly">Yearly</option>
                 </select>
 
-                <select id="startMonth" class="hide">
-                    <option value="0">Every other month starting in January</option>
-                    <option value="1">Every other month starting in February</option>
-                    <option value="2">Every other month starting in March</option>
-                    <option value="3">Every other month starting in April</option>
-                    <option value="4">Every other month starting in May</option>
-                    <option value="5">Every other month starting in June</option>
-                    <option value="6">Every other month starting in July</option>
-                    <option value="7">Every other month starting in August</option>
-                    <option value="8">Every other month starting in September</option>
-                    <option value="9">Every other month starting in October</option>
-                    <option value="10">Every other month starting in November</option>
-                    <option value="11">Every other month starting in December</option>
-                </select>
+                <select id="startMonth" class="hide"></select>
 
                 <button id="saveBillBtn" class="primary-btn">Save Bill</button>
 
                 <p class="small-note">
-                    For bills that are due every other month, choose the month the pattern starts in.
-                    Example: starting in January means January, March, May, July, September, and November.
+                    Monthly bills show every month. Every-other-month bills follow the month pattern you choose.
+                    Yearly bills show once a year in the month you choose.
                 </p>
             </div>
         </section>
@@ -640,7 +623,7 @@
 
                 <p class="small-note">
                     The smart area keeps a $400 cushion target. If a future paycheck comes up short,
-                    the previous paycheck will show a cushion hold.
+                    an earlier paycheck will show a cushion save.
                 </p>
             </div>
         </section>
@@ -668,6 +651,7 @@
         const BILL_STORAGE_KEY = "billTracker.bills.v2";
         const SETTINGS_STORAGE_KEY = "billTracker.settings.v2";
         const CUSHION_TARGET = 400;
+        const PAYCHECK_COUNT = 6;
 
         const DEFAULT_BILLS = [
             "Rent / Mortgage",
@@ -678,9 +662,11 @@
             "Phone",
             "Car Payment",
             "Car Insurance",
+            "Car Registration",
             "Health Insurance",
             "Credit Card",
             "Loan",
+            "Amazon Membership",
             "Streaming",
             "Storage",
             "Gym",
@@ -688,8 +674,12 @@
             "Other"
         ];
 
-        const today = startOfDay(new Date());
+        const MONTH_NAMES = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
 
+        let today = startOfDay(new Date());
         let bills = loadBills();
         let settings = loadSettings();
         let calendarCursor = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -755,7 +745,8 @@
         }
 
         function normalizeBill(b) {
-            const frequency = b.frequency === "every_other_month" ? "every_other_month" : "monthly";
+            const allowedFrequencies = ["monthly", "every_other_month", "yearly"];
+            const frequency = allowedFrequencies.includes(b.frequency) ? b.frequency : "monthly";
             let startMonth = Number(b.startMonth);
 
             if (!Number.isInteger(startMonth) || startMonth < 0 || startMonth > 11) {
@@ -883,12 +874,28 @@
         }
 
         function billOccursInMonth(bill, year, monthIndex) {
-            if (bill.frequency !== "every_other_month") {
-                return true;
+            if (bill.frequency === "yearly") {
+                return Number(bill.startMonth) === monthIndex;
             }
 
-            const difference = (monthIndex - Number(bill.startMonth) + 12) % 12;
-            return difference % 2 === 0;
+            if (bill.frequency === "every_other_month") {
+                const difference = (monthIndex - Number(bill.startMonth) + 12) % 12;
+                return difference % 2 === 0;
+            }
+
+            return true;
+        }
+
+        function getFrequencyLabel(bill) {
+            if (bill.frequency === "yearly") {
+                return "Yearly";
+            }
+
+            if (bill.frequency === "every_other_month") {
+                return "Other mo.";
+            }
+
+            return "Month";
         }
 
         function getNextPayDateAfter(date, frequency) {
@@ -1021,7 +1028,7 @@
             return results;
         }
 
-        function getNextFourPaychecks() {
+        function getNextPaychecks(count = PAYCHECK_COUNT) {
             let first = parseISODate(settings.nextPayDate) || parseISODate(getNextFridayISO());
 
             while (first < today) {
@@ -1031,7 +1038,7 @@
             const checks = [];
             let current = first;
 
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < count; i++) {
                 const next = getNextPayDateAfter(current, settings.payFrequency);
 
                 checks.push({
@@ -1136,7 +1143,7 @@
             const start = new Date(year, monthIndex, day);
             const end = new Date(year, monthIndex, day + 1);
             const calendarChecks = getPaychecksInRange(start, end);
-            const smartChecks = getNextFourPaychecks();
+            const smartChecks = getNextPaychecks();
 
             return calendarChecks.map(check => {
                 const smartMatch = smartChecks.find(smart => sameDay(smart.date, check.date));
@@ -1170,6 +1177,38 @@
 
             if ([...els.billPick.options].some(o => o.value === current)) {
                 els.billPick.value = current;
+            }
+        }
+
+        function setStartMonthOptions(mode, selectedValue) {
+            const currentValue = selectedValue ?? els.startMonth.value ?? today.getMonth();
+
+            els.startMonth.innerHTML = "";
+
+            MONTH_NAMES.forEach((monthName, index) => {
+                const option = document.createElement("option");
+                option.value = index;
+
+                if (mode === "yearly") {
+                    option.textContent = `Yearly due in ${monthName}`;
+                } else {
+                    option.textContent = `Every other month starting in ${monthName}`;
+                }
+
+                els.startMonth.appendChild(option);
+            });
+
+            els.startMonth.value = String(currentValue);
+        }
+
+        function updateFrequencyMonthPicker(selectedValue) {
+            const frequency = els.billFrequency.value;
+
+            if (frequency === "every_other_month" || frequency === "yearly") {
+                setStartMonthOptions(frequency, selectedValue);
+                els.startMonth.classList.remove("hide");
+            } else {
+                els.startMonth.classList.add("hide");
             }
         }
 
@@ -1277,7 +1316,7 @@
                         if (check.cushionFromPrevious > 0) {
                             html += `
                                 <li class="cushion-line">
-                                    <span>+</span>
+                                    <span>Use</span>
                                     <span>Cushion</span>
                                     <strong>+${formatMoney(check.cushionFromPrevious)}</strong>
                                 </li>
@@ -1287,7 +1326,7 @@
                         if (check.holdForNext > 0) {
                             html += `
                                 <li class="cushion-line">
-                                    <span>-</span>
+                                    <span>Save</span>
                                     <span>Cushion</span>
                                     <strong>-${formatMoney(check.holdForNext)}</strong>
                                 </li>
@@ -1297,8 +1336,8 @@
                         if (check.warning) {
                             html += `
                                 <li class="cushion-line">
-                                    <span>!</span>
-                                    <span>Cushion short</span>
+                                    <span>Short</span>
+                                    <span>Cushion</span>
                                     <strong>-${formatMoney(check.warning)}</strong>
                                 </li>
                             `;
@@ -1373,7 +1412,7 @@
                         <td>${bill.day}</td>
                         <td>${escapeHTML(bill.name)}</td>
                         <td class="amount">${formatMoney(bill.amount)}</td>
-                        <td>${bill.frequency === "every_other_month" ? "Other mo." : "Month"}</td>
+                        <td>${getFrequencyLabel(bill)}</td>
                         <td>
                             <div class="bill-actions">
                                 <button class="edit-btn" onclick="editBill('${bill.id}')">Edit</button>
@@ -1394,7 +1433,7 @@
         }
 
         function renderPaychecks() {
-            const checks = getNextFourPaychecks();
+            const checks = getNextPaychecks();
             const payAmount = Number(settings.paycheckAmount || 0);
 
             let html = "";
@@ -1432,7 +1471,7 @@
                     if (check.cushionFromPrevious > 0) {
                         html += `
                             <li class="cushion-line">
-                                <span>+</span>
+                                <span>Use</span>
                                 <span>Cushion</span>
                                 <strong>+${formatMoney(check.cushionFromPrevious)}</strong>
                             </li>
@@ -1442,7 +1481,7 @@
                     if (check.holdForNext > 0) {
                         html += `
                             <li class="cushion-line">
-                                <span>-</span>
+                                <span>Save</span>
                                 <span>Cushion</span>
                                 <strong>-${formatMoney(check.holdForNext)}</strong>
                             </li>
@@ -1452,8 +1491,8 @@
                     if (check.warning) {
                         html += `
                             <li class="cushion-line">
-                                <span>!</span>
-                                <span>Cushion short</span>
+                                <span>Short</span>
+                                <span>Cushion</span>
                                 <strong>-${formatMoney(check.warning)}</strong>
                             </li>
                         `;
@@ -1545,8 +1584,7 @@
             els.amount.value = "";
             els.dueDay.value = "";
             els.billFrequency.value = "monthly";
-            els.startMonth.value = today.getMonth();
-            els.startMonth.classList.add("hide");
+            updateFrequencyMonthPicker(today.getMonth());
 
             renderAll();
         }
@@ -1572,13 +1610,7 @@
             els.amount.value = bill.amount;
             els.dueDay.value = bill.day;
             els.billFrequency.value = bill.frequency || "monthly";
-            els.startMonth.value = Number.isInteger(Number(bill.startMonth)) ? bill.startMonth : today.getMonth();
-
-            if (els.billFrequency.value === "every_other_month") {
-                els.startMonth.classList.remove("hide");
-            } else {
-                els.startMonth.classList.add("hide");
-            }
+            updateFrequencyMonthPicker(bill.startMonth);
 
             document.getElementById("addBillSection").scrollIntoView({
                 behavior: "smooth",
@@ -1624,8 +1656,7 @@
                 els.amount.value = "";
                 els.dueDay.value = "";
                 els.billFrequency.value = "monthly";
-                els.startMonth.value = today.getMonth();
-                els.startMonth.classList.add("hide");
+                updateFrequencyMonthPicker(today.getMonth());
                 return;
             }
 
@@ -1638,28 +1669,18 @@
                 els.amount.value = existing.amount;
                 els.dueDay.value = existing.day;
                 els.billFrequency.value = existing.frequency || "monthly";
-                els.startMonth.value = Number.isInteger(Number(existing.startMonth)) ? existing.startMonth : today.getMonth();
-
-                if (els.billFrequency.value === "every_other_month") {
-                    els.startMonth.classList.remove("hide");
-                } else {
-                    els.startMonth.classList.add("hide");
-                }
+                updateFrequencyMonthPicker(existing.startMonth);
             }
         }
 
         function handleFrequencyChange() {
-            if (els.billFrequency.value === "every_other_month") {
-                els.startMonth.classList.remove("hide");
-            } else {
-                els.startMonth.classList.add("hide");
-            }
+            updateFrequencyMonthPicker(today.getMonth());
         }
 
         function exportBackup() {
             const backup = {
                 app: "My Bills",
-                version: 8,
+                version: 11,
                 exportedAt: new Date().toISOString(),
                 bills,
                 settings
@@ -1724,6 +1745,7 @@
                     saveBills();
                     saveSettings();
                     fillSettingsForm();
+                    updateFrequencyMonthPicker(today.getMonth());
                     renderAll();
 
                     alert("Backup imported successfully.");
@@ -1752,6 +1774,17 @@
 
             selectedDay = Math.min(selectedDay, daysInNewMonth);
             renderCalendar();
+        }
+
+        function refreshTodayIfNeeded() {
+            const freshToday = startOfDay(new Date());
+
+            if (!sameDay(freshToday, today)) {
+                today = freshToday;
+                return true;
+            }
+
+            return false;
         }
 
         let swipeStartX = 0;
@@ -1791,7 +1824,19 @@
             if (file) importBackupFile(file);
         });
 
-        els.startMonth.value = today.getMonth();
+        window.addEventListener("focus", () => {
+            if (refreshTodayIfNeeded()) renderAll();
+        });
+
+        document.addEventListener("visibilitychange", () => {
+            if (!document.hidden && refreshTodayIfNeeded()) renderAll();
+        });
+
+        setInterval(() => {
+            if (refreshTodayIfNeeded()) renderAll();
+        }, 60 * 60 * 1000);
+
+        updateFrequencyMonthPicker(today.getMonth());
 
         if ("serviceWorker" in navigator) {
             window.addEventListener("load", () => {
