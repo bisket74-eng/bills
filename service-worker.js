@@ -1,4 +1,4 @@
-const CACHE_NAME = "my-bills-cache-v2";
+const CACHE_NAME = "my-bills-cache-v6";
 
 const FILES_TO_CACHE = [
   "./",
@@ -10,8 +10,14 @@ const FILES_TO_CACHE = [
 
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(FILES_TO_CACHE);
+    caches.open(CACHE_NAME).then(async cache => {
+      for (const file of FILES_TO_CACHE) {
+        try {
+          await cache.add(file);
+        } catch (err) {
+          console.warn("Could not cache:", file, err);
+        }
+      }
     })
   );
 
