@@ -1,17 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>My Bills</title>
-
-  <meta name="theme-color" content="#eafbe7" />
+  <title>My Bills</title>  <meta name="theme-color" content="#eafbe7" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="My Bills" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <link rel="manifest" href="./manifest.json" />
-
-  <style>
+  <link rel="manifest" href="./manifest.json" />  <style>
     :root {
       --bg1: #eafbe7;
       --bg2: #e8f4ff;
@@ -445,15 +440,16 @@
     }
 
     .cushion-line {
-  background: rgba(255, 255, 255, 0.78) !important;
-  color: #b8860b !important;
-  font-weight: 900;
-}
+      background: rgba(255, 255, 255, 0.78) !important;
+      color: #b8860b !important;
+      font-weight: 900;
+    }
 
-.cushion-line span,
-.cushion-line strong {
-  color: #b8860b !important;
-}
+    .cushion-line span,
+    .cushion-line strong {
+      color: #b8860b !important;
+    }
+
     .summary-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -612,159 +608,153 @@
         font-size: 0.82rem;
       }
     }
-  </style>
-</head>
-
-<body>
+  </style></head><body>
   <main class="app">
     <header class="top-header">
       <h1>My Bills</h1>
       <p id="todayLine">Your monthly bills and paycheck plan</p>
-    </header>
+    </header><section class="card card-calendar">
+  <div class="calendar-head">
+    <button class="cal-nav" id="prevMonthBtn" type="button">‹</button>
+    <h2 id="calendarTitle">Month Year</h2>
+    <button class="cal-nav" id="nextMonthBtn" type="button">›</button>
+  </div>
 
-    <section class="card card-calendar">
-      <div class="calendar-head">
-        <button class="cal-nav" id="prevMonthBtn" type="button">‹</button>
-        <h2 id="calendarTitle">Month Year</h2>
-        <button class="cal-nav" id="nextMonthBtn" type="button">›</button>
-      </div>
+  <div class="weekdays">
+    <span>Sun</span>
+    <span>Mon</span>
+    <span>Tue</span>
+    <span>Wed</span>
+    <span>Thu</span>
+    <span>Fri</span>
+    <span>Sat</span>
+  </div>
 
-      <div class="weekdays">
-        <span>Sun</span>
-        <span>Mon</span>
-        <span>Tue</span>
-        <span>Wed</span>
-        <span>Thu</span>
-        <span>Fri</span>
-        <span>Sat</span>
-      </div>
+  <div class="calendar-grid" id="calendarGrid"></div>
 
-      <div class="calendar-grid" id="calendarGrid"></div>
+  <div class="selected-day-box" id="selectedDayBox">
+    <h3>Select a day</h3>
+    <p class="small-note">Tap a bill day or payday to see what is due.</p>
+  </div>
+</section>
 
-      <div class="selected-day-box" id="selectedDayBox">
-        <h3>Select a day</h3>
-        <p class="small-note">Tap a bill day or payday to see what is due.</p>
-      </div>
-    </section>
+<section class="card card-next">
+  <h2 class="section-title">
+    Next 6 Paychecks
+    <span class="pill" id="cushionPill">Cushion: $0</span>
+  </h2>
+  <div id="paycheckArea"></div>
+</section>
 
-    <section class="card card-next">
-      <h2 class="section-title">
-        Next 6 Paychecks
-        <span class="pill" id="cushionPill">Cushion: $0</span>
-      </h2>
-      <div id="paycheckArea"></div>
-    </section>
+<section class="card card-bills">
+  <h2 class="section-title">
+    Bills
+    <span class="pill" id="billCountPill">0 bills</span>
+  </h2>
+  <div id="billList"></div>
+</section>
 
-    <section class="card card-bills">
-      <h2 class="section-title">
-        Bills
-        <span class="pill" id="billCountPill">0 bills</span>
-      </h2>
-      <div id="billList"></div>
-    </section>
+<section class="card card-add" id="addBillSection">
+  <h2 class="section-title" id="billFormTitle">Add Bill</h2>
 
-    <section class="card card-add" id="addBillSection">
-      <h2 class="section-title" id="billFormTitle">Add Bill</h2>
+  <div class="form-grid">
+    <div>
+      <label for="billName">Bill name</label>
+      <input id="billName" list="billSuggestions" placeholder="Electric, Rent, Phone..." />
+      <datalist id="billSuggestions"></datalist>
+    </div>
 
-      <div class="form-grid">
-        <div>
-          <label for="billName">Bill name</label>
-          <input id="billName" list="billSuggestions" placeholder="Electric, Rent, Phone..." />
-          <datalist id="billSuggestions"></datalist>
-        </div>
+    <div>
+      <label for="billAmount">Amount</label>
+      <input id="billAmount" type="number" min="0" step="0.01" placeholder="0.00" />
+    </div>
 
-        <div>
-          <label for="billAmount">Amount</label>
-          <input id="billAmount" type="number" min="0" step="0.01" placeholder="0.00" />
-        </div>
+    <div>
+      <label for="billDueDay">Due day</label>
+      <select id="billDueDay"></select>
+    </div>
 
-        <div>
-          <label for="billDueDay">Due day</label>
-          <select id="billDueDay"></select>
-        </div>
+    <div>
+      <label for="billFrequency">Frequency</label>
+      <select id="billFrequency">
+        <option value="monthly">Monthly</option>
+        <option value="every_other_month">Every other month</option>
+        <option value="yearly">Yearly</option>
+      </select>
+    </div>
 
-        <div>
-          <label for="billFrequency">Frequency</label>
-          <select id="billFrequency">
-            <option value="monthly">Monthly</option>
-            <option value="every_other_month">Every other month</option>
-            <option value="yearly">Yearly</option>
-          </select>
-        </div>
+    <div class="full-width">
+      <select id="startMonth" class="hide"></select>
+    </div>
+  </div>
 
-        <div class="full-width">
-          <select id="startMonth" class="hide"></select>
-        </div>
-      </div>
+  <p class="small-note">
+    Monthly bills show every month. Every-other-month bills follow the month pattern you choose.
+    Yearly bills show once a year in the month you choose.
+  </p>
 
-      <p class="small-note">
-        Monthly bills show every month. Every-other-month bills follow the month pattern you choose.
-        Yearly bills show once a year in the month you choose.
-      </p>
+  <div class="btn-row">
+    <button class="btn btn-primary" id="saveBillBtn" type="button">Save Bill</button>
+    <button class="btn" id="cancelEditBtn" type="button">Cancel</button>
+  </div>
+</section>
 
-      <div class="btn-row">
-        <button class="btn btn-primary" id="saveBillBtn" type="button">Save Bill</button>
-        <button class="btn" id="cancelEditBtn" type="button">Cancel</button>
-      </div>
-    </section>
+<section class="card card-setup">
+  <h2 class="section-title">Paycheck Setup</h2>
 
-    <section class="card card-setup">
-      <h2 class="section-title">Paycheck Setup</h2>
+  <div class="form-grid">
+    <div>
+      <label for="paycheckAmount">Paycheck amount</label>
+      <input id="paycheckAmount" type="number" min="0" step="0.01" placeholder="0.00" />
+    </div>
 
-      <div class="form-grid">
-        <div>
-          <label for="paycheckAmount">Paycheck amount</label>
-          <input id="paycheckAmount" type="number" min="0" step="0.01" placeholder="0.00" />
-        </div>
+    <div>
+      <label for="cushionTarget">Cushion target</label>
+      <input id="cushionTarget" type="number" min="0" step="0.01" placeholder="400.00" />
+      <p class="small-note">(Amount you want left after bills.)</p>
+    </div>
 
-        <div>
-          <label for="cushionTarget">Cushion target</label>
-          <input id="cushionTarget" type="number" min="0" step="0.01" placeholder="400.00" />
-          <p class="small-note">(Amount you want left after bills.)</p>
-        </div>
+    <div>
+      <label for="payFrequency">Pay frequency</label>
+      <select id="payFrequency">
+        <option value="weekly">Weekly</option>
+        <option value="biweekly">Every 2 weeks</option>
+        <option value="semimonthly">1st and 15th</option>
+        <option value="monthly">Monthly</option>
+      </select>
+    </div>
 
-        <div>
-          <label for="payFrequency">Pay frequency</label>
-          <select id="payFrequency">
-            <option value="weekly">Weekly</option>
-            <option value="biweekly">Every 2 weeks</option>
-            <option value="semimonthly">1st and 15th</option>
-            <option value="monthly">Monthly</option>
-          </select>
-        </div>
+    <div>
+      <label for="nextPayDate">Next payday</label>
+      <input id="nextPayDate" type="date" />
+    </div>
+  </div>
 
-        <div>
-          <label for="nextPayDate">Next payday</label>
-          <input id="nextPayDate" type="date" />
-        </div>
-      </div>
+  <div class="setup-preview" id="setupPreview"></div>
 
-      <div class="setup-preview" id="setupPreview"></div>
+  <div class="btn-row">
+    <button class="btn btn-blue" id="saveSettingsBtn" type="button">Save Paycheck Setup</button>
+  </div>
+</section>
 
-      <div class="btn-row">
-        <button class="btn btn-blue" id="saveSettingsBtn" type="button">Save Paycheck Setup</button>
-      </div>
-    </section>
+<section class="card card-backup">
+  <h2 class="section-title">Backup</h2>
+  <p class="small-note">
+    Export saves your bills and paycheck setup to a file. Import restores them on this device.
+  </p>
 
-    <section class="card card-backup">
-      <h2 class="section-title">Backup</h2>
-      <p class="small-note">
-        Export saves your bills and paycheck setup to a file. Import restores them on this device.
-      </p>
+  <div class="btn-row">
+    <button class="btn btn-yellow" id="exportBtn" type="button">Export Backup</button>
+    <label class="btn btn-blue" for="importFile">Import Backup</label>
+    <input class="hide" id="importFile" type="file" accept="application/json,.json" />
+  </div>
 
-      <div class="btn-row">
-        <button class="btn btn-yellow" id="exportBtn" type="button">Export Backup</button>
-        <label class="btn btn-blue" for="importFile">Import Backup</label>
-        <input class="hide" id="importFile" type="file" accept="application/json,.json" />
-      </div>
+  <div class="backup-box">
+    <p class="small-note" id="backupStatus">No backup action yet.</p>
+  </div>
+</section>
 
-      <div class="backup-box">
-        <p class="small-note" id="backupStatus">No backup action yet.</p>
-      </div>
-    </section>
-  </main>
-
-  <script>
+  </main>  <script>
     const BILL_STORAGE_KEY = "billTracker.bills.v2";
     const SETTINGS_STORAGE_KEY = "billTracker.settings.v2";
     const PAYCHECK_COUNT = 6;
@@ -901,6 +891,51 @@
       return startOfDay(next);
     }
 
+    function makeId() {
+      if (window.crypto && typeof window.crypto.randomUUID === "function") {
+        return window.crypto.randomUUID();
+      }
+
+      return `bill-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function parseMonthValue(value, fallback = today.getMonth()) {
+      if (value === undefined || value === null || value === "") {
+        return fallback;
+      }
+
+      if (typeof value === "string") {
+        const clean = value.trim().toLowerCase();
+        const monthIndex = MONTH_NAMES.findIndex(month => month.toLowerCase() === clean);
+
+        if (monthIndex >= 0) {
+          return monthIndex;
+        }
+
+        const shortMonthIndex = MONTH_NAMES.findIndex(month => month.slice(0, 3).toLowerCase() === clean.slice(0, 3));
+
+        if (shortMonthIndex >= 0 && Number.isNaN(Number(clean))) {
+          return shortMonthIndex;
+        }
+      }
+
+      const numberValue = Number(value);
+
+      if (!Number.isFinite(numberValue)) {
+        return fallback;
+      }
+
+      if (numberValue >= 0 && numberValue <= 11) {
+        return Math.floor(numberValue);
+      }
+
+      if (numberValue >= 1 && numberValue <= 12) {
+        return Math.floor(numberValue) - 1;
+      }
+
+      return fallback;
+    }
+
     function loadBills() {
       try {
         const saved = JSON.parse(localStorage.getItem(BILL_STORAGE_KEY) || "[]");
@@ -952,16 +987,78 @@
     function normalizeBill(bill) {
       if (!bill || !bill.name) return null;
 
-      const allowedFrequencies = ["monthly", "every_other_month", "yearly"];
-      const frequency = allowedFrequencies.includes(bill.frequency) ? bill.frequency : "monthly";
+      const rawFrequency =
+        bill.frequency ??
+        bill.billFrequency ??
+        bill.freq ??
+        bill.repeat ??
+        "monthly";
+
+      let frequency = String(rawFrequency).toLowerCase().trim();
+
+      if (
+        frequency === "every other month" ||
+        frequency === "every-other-month" ||
+        frequency === "everyothermonth" ||
+        frequency === "bimonthly" ||
+        frequency === "bi-monthly"
+      ) {
+        frequency = "every_other_month";
+      }
+
+      if (
+        frequency === "annual" ||
+        frequency === "annually" ||
+        frequency === "year" ||
+        frequency === "once a year"
+      ) {
+        frequency = "yearly";
+      }
+
+      if (!["monthly", "every_other_month", "yearly"].includes(frequency)) {
+        frequency = "monthly";
+      }
+
+      let dueDay =
+        bill.dueDay ??
+        bill.due_day ??
+        bill.day ??
+        bill.due ??
+        bill.billDueDay ??
+        bill.dueDate ??
+        bill.date;
+
+      if (typeof dueDay === "string" && dueDay.includes("-")) {
+        const dateParts = dueDay.split("-").map(Number);
+        dueDay = dateParts[2];
+      }
+
+      dueDay = Math.min(31, Math.max(1, Number(dueDay) || 1));
+
+      let startMonth =
+        bill.startMonth ??
+        bill.start_month ??
+        bill.month ??
+        bill.dueMonth ??
+        today.getMonth();
+
+      if (typeof bill.dueDate === "string" && bill.dueDate.includes("-")) {
+        const dateParts = bill.dueDate.split("-").map(Number);
+
+        if (Number.isFinite(dateParts[1])) {
+          startMonth = dateParts[1] - 1;
+        }
+      }
+
+      startMonth = parseMonthValue(startMonth, today.getMonth());
 
       return {
-        id: bill.id || crypto.randomUUID(),
+        id: bill.id || makeId(),
         name: String(bill.name).trim(),
         amount: Number(bill.amount) || 0,
-        dueDay: Math.min(31, Math.max(1, Number(bill.dueDay) || 1)),
+        dueDay,
         frequency,
-        startMonth: Number.isInteger(Number(bill.startMonth)) ? Number(bill.startMonth) : today.getMonth()
+        startMonth
       };
     }
 
@@ -1021,6 +1118,7 @@
           if (!billOccursInMonth(bill, year, monthIndex)) return;
 
           const dueDate = getBillDueDateInMonth(bill, year, monthIndex);
+
           if (dueDate >= start && dueDate < end) {
             results.push({
               ...bill,
@@ -1206,7 +1304,7 @@
           amount - check.billTotal - check.holdForNext;
 
         const amountNeededFromPrevious =
-          Math.max(0, getCushionTarget() - leftAfterBillsAndSavingForNext);
+          Math.max(0, cushionTarget - leftAfterBillsAndSavingForNext);
 
         if (amountNeededFromPrevious > 0) {
           if (i > 0) {
@@ -1304,6 +1402,7 @@
 
         if (check.bills.length) {
           html += `<ul class="mini-list">`;
+
           check.bills.forEach(bill => {
             html += `
               <li>
@@ -1313,12 +1412,14 @@
               </li>
             `;
           });
+
           html += `</ul>`;
         } else {
           html += `<p class="small-note">No bills are assigned to this paycheck period.</p>`;
         }
       } else if (dayBills.length) {
         html += `<ul class="mini-list">`;
+
         dayBills.forEach(bill => {
           html += `
             <li>
@@ -1328,6 +1429,7 @@
             </li>
           `;
         });
+
         html += `</ul>`;
       } else {
         html += `<p class="small-note">No bills or payday events on this day.</p>`;
@@ -1619,7 +1721,7 @@
       }
 
       const bill = normalizeBill({
-        id: editingBillId || crypto.randomUUID(),
+        id: editingBillId || makeId(),
         name,
         amount,
         dueDay,
@@ -1698,11 +1800,25 @@
     }
 
     function exportBackup() {
+      const cleanBills = bills.map(bill => ({
+        id: bill.id,
+        name: bill.name,
+        amount: Number(bill.amount) || 0,
+        dueDay: Number(bill.dueDay) || 1,
+        frequency: bill.frequency || "monthly",
+        startMonth: parseMonthValue(bill.startMonth, today.getMonth())
+      }));
+
       const backup = {
-        version: 13,
+        version: 14,
         exportedAt: new Date().toISOString(),
-        bills,
-        settings
+        bills: cleanBills,
+        settings: {
+          paycheckAmount: settings.paycheckAmount ?? "",
+          cushionTarget: settings.cushionTarget ?? 400,
+          payFrequency: settings.payFrequency ?? "biweekly",
+          nextPayDate: settings.nextPayDate ?? formatDateInput(today)
+        }
       };
 
       const blob = new Blob([JSON.stringify(backup, null, 2)], {
@@ -1718,7 +1834,7 @@
       link.remove();
       URL.revokeObjectURL(url);
 
-      els.backupStatus.textContent = "Backup exported.";
+      els.backupStatus.textContent = "Backup exported with due days and frequencies saved.";
     }
 
     function importBackup(file) {
@@ -1730,17 +1846,28 @@
         try {
           const data = JSON.parse(reader.result);
 
-          if (!Array.isArray(data.bills)) {
+          const importedBills =
+            data.bills ||
+            data.billData ||
+            data.items ||
+            data.savedBills ||
+            [];
+
+          if (!Array.isArray(importedBills)) {
             throw new Error("Backup does not contain bills.");
           }
 
-          bills = data.bills.map(normalizeBill).filter(Boolean);
+          bills = importedBills.map(normalizeBill).filter(Boolean);
+
           settings = {
             ...loadSettings(),
             ...(data.settings || {})
           };
 
+          settings.paycheckAmount = settings.paycheckAmount ?? "";
           settings.cushionTarget = settings.cushionTarget ?? 400;
+          settings.payFrequency = settings.payFrequency ?? "biweekly";
+          settings.nextPayDate = settings.nextPayDate ?? formatDateInput(today);
 
           saveBills();
           saveSettings();
@@ -1748,7 +1875,7 @@
           clearBillForm();
           render();
 
-          els.backupStatus.textContent = "Backup imported successfully.";
+          els.backupStatus.textContent = "Backup imported with due days and frequencies restored.";
           els.importFile.value = "";
         } catch (err) {
           els.backupStatus.textContent = "Could not import that backup file.";
@@ -1822,6 +1949,5 @@
         navigator.serviceWorker.register("./service-worker.js").catch(() => {});
       });
     }
-  </script>
-</body>
+  </script></body>
 </html>
