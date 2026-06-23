@@ -208,21 +208,21 @@
     }
 
     .btn {
-  border: 0;
-  border-radius: 999px;
-  padding: 11px 15px;
-  font-size: 0.95rem;
-  line-height: 1;
-  font-weight: 900;
-  color: #20352a;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 7px 16px rgba(43, 67, 55, 0.12);
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 15px;
+      font-size: 0.95rem;
+      line-height: 1;
+      font-weight: 900;
+      color: #20352a;
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: 0 7px 16px rgba(43, 67, 55, 0.12);
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
 
     .btn-primary {
       background: linear-gradient(135deg, #8be0a7, #d7f7df);
@@ -476,6 +476,14 @@
       display: block;
       margin-top: 4px;
       font-size: 1.08rem;
+    }
+
+    .money-out {
+      color: #9b2f19;
+    }
+
+    .money-left {
+      color: #2f7d50;
     }
 
     .warning {
@@ -852,7 +860,12 @@
     }
 
     function formatMoney(amount) {
-      const value = Number(amount) || 0;
+      let value = Number(amount) || 0;
+
+      if (Math.abs(value) < 0.005) {
+        value = 0;
+      }
+
       return value.toLocaleString("en-US", {
         style: "currency",
         currency: "USD"
@@ -870,11 +883,6 @@
     function clampDay(year, monthIndex, day) {
       const lastDay = new Date(year, monthIndex + 1, 0).getDate();
       return Math.min(Number(day), lastDay);
-    }
-
-    function daysBetween(a, b) {
-      const ms = startOfDay(b).getTime() - startOfDay(a).getTime();
-      return Math.round(ms / 86400000);
     }
 
     function addDays(date, days) {
@@ -1042,6 +1050,7 @@
       let stepDays = 14;
 
       if (settings.payFrequency === "weekly") stepDays = 7;
+
       if (settings.payFrequency === "monthly") {
         let cursor = new Date(anchor);
 
@@ -1176,33 +1185,38 @@
 
     function applyCushionPlan(checks) {
       const cushionTarget = getCushionTarget();
-      let neededFromPrevious = 0;
+
+      checks.forEach(check => {
+        check.cushionFromPrevious = 0;
+        check.holdForNext = 0;
+        check.warning = 0;
+        check.leftAfterBills = (Number(check.amount) || 0) - check.billTotal;
+        check.finalLeft = check.leftAfterBills;
+      });
 
       for (let i = checks.length - 1; i >= 0; i--) {
         const check = checks[i];
         const amount = Number(check.amount) || 0;
-        const baseLeft = amount - check.billTotal;
 
-        if (neededFromPrevious > 0) {
-          check.cushionFromPrevious = neededFromPrevious;
+        const leftAfterBillsAndSavingForNext =
+          amount - check.billTotal - check.holdForNext;
+
+        const amountNeededFromPrevious =
+          Math.max(0, getCushionTarget() - leftAfterBillsAndSavingForNext);
+
+        if (amountNeededFromPrevious > 0) {
+          if (i > 0) {
+            check.cushionFromPrevious = amountNeededFromPrevious;
+            checks[i - 1].holdForNext += amountNeededFromPrevious;
+          } else {
+            check.warning = amountNeededFromPrevious;
+          }
         }
-
-        const leftAfterUsingPrevious = baseLeft + check.cushionFromPrevious;
-        const shortForThisCheck = Math.max(0, cushionTarget - leftAfterUsingPrevious);
-
-        if (i === 0) {
-          check.warning = shortForThisCheck;
-          neededFromPrevious = 0;
-        } else {
-          neededFromPrevious = shortForThisCheck;
-          checks[i - 1].holdForNext = shortForThisCheck;
-        }
-
-        check.leftAfterBills = baseLeft;
       }
 
       checks.forEach(check => {
-        check.finalLeft = (Number(check.amount) || 0)
+        check.finalLeft =
+          (Number(check.amount) || 0)
           - check.billTotal
           + check.cushionFromPrevious
           - check.holdForNext;
@@ -1290,7 +1304,7 @@
             html += `
               <li>
                 <span>${formatShortDate(bill.dueDate)}</span>
-                <span>${bill.name}</span>
+                <span>${escapeHtml(bill.name)}</span>
                 <strong>${formatMoney(bill.amount)}</strong>
               </li>
             `;
@@ -1305,7 +1319,7 @@
           html += `
             <li>
               <span>Due</span>
-              <span>${bill.name}</span>
+              <span>${escapeHtml(bill.name)}</span>
               <strong>${formatMoney(bill.amount)}</strong>
             </li>
           `;
@@ -1348,7 +1362,7 @@
             billHtml += `
               <li>
                 <span class="bill-date-tag">${formatShortDate(bill.dueDate)}</span>
-                <span>${bill.name}</span>
+                <span>${escapeHtml(bill.name)}</span>
                 <strong>${formatMoney(bill.amount)}</strong>
               </li>
             `;
@@ -1429,6 +1443,8 @@
           ? `<div class="warning">This first visible paycheck is short ${formatMoney(check.warning)} from the cushion target.</div>`
           : "";
 
+        const finalClass = check.finalLeft < 0 ? "money-out" : "money-left";
+
         return `
           <article class="paycheck-card">
             <div class="paycheck-top">
@@ -1445,11 +1461,11 @@
             <div class="summary-row">
               <div class="summary-box">
                 <span>Bills from this check</span>
-                <strong>${formatMoney(check.billTotal)}</strong>
+                <strong class="money-out">${formatMoney(check.billTotal)}</strong>
               </div>
               <div class="summary-box">
                 <span>${check.amount ? "Left after bills and cushion" : "Paycheck amount"}</span>
-                <strong>${formatMoney(check.amount ? check.finalLeft : 0)}</strong>
+                <strong class="${finalClass}">${formatMoney(check.amount ? check.finalLeft : 0)}</strong>
               </div>
             </div>
           </article>
@@ -1679,7 +1695,7 @@
 
     function exportBackup() {
       const backup = {
-        version: 12,
+        version: 13,
         exportedAt: new Date().toISOString(),
         bills,
         settings
