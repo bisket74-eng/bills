@@ -1186,37 +1186,73 @@
       const paychecks = [];
       const payAmount = Number(settings.paycheckAmount) || 0;
 
+      // The first paycheck shown is the paycheck period we are currently in:
+      // the most recent payday on or before today. The remaining entries are
+      // the following paychecks.
       if (settings.payFrequency === "semimonthly") {
-        let cursor = new Date(today.getFullYear(), today.getMonth(), 1);
+        let year = today.getFullYear();
+        let month = today.getMonth();
 
         while (paychecks.length < count) {
-          const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
-          const fifteenth = new Date(cursor.getFullYear(), cursor.getMonth(), 15);
+          const first = new Date(year, month, 1);
+          const fifteenth = new Date(year, month, 15);
+          const candidates = [first, fifteenth].filter(payDate => payDate <= today);
 
-          [first, fifteenth].forEach(payDate => {
-            if (paychecks.length < count && payDate >= today) {
+          candidates.sort((a, b) => b - a);
+
+          for (const payDate of candidates) {
+            if (paychecks.length < count) {
               paychecks.push({
                 date: startOfDay(payDate),
                 amount: payAmount
               });
             }
-          });
+          }
 
-          cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+          month -= 1;
+          if (month < 0) {
+            month = 11;
+            year -= 1;
+          }
+        }
+
+        paychecks.reverse();
+
+        // We need the current paycheck first, then future paychecks.
+        const currentAndFuture = [
+          ...paychecks.filter(check => check.date >= today),
+          ...paychecks.filter(check => check.date < today)
+        ];
+
+        // Rebuild cleanly from the current period forward.
+        const currentPayDate = getMostRecentSemimonthlyPayDate(today);
+        paychecks.length = 0;
+        paychecks.push({ date: currentPayDate, amount: payAmount });
+
+        let cursor = currentPayDate;
+        while (paychecks.length < count) {
+          cursor = cursor.getDate() === 1
+            ? new Date(cursor.getFullYear(), cursor.getMonth(), 15)
+            : new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+
+          paychecks.push({
+            date: startOfDay(cursor),
+            amount: payAmount
+          });
         }
 
         return buildPaycheckPeriods(paychecks);
       }
 
       if (settings.payFrequency === "monthly") {
-        let anchor = dateFromKey(settings.nextPayDate);
-        const anchorDay = anchor.getDate();
+        const configured = dateFromKey(settings.nextPayDate);
+        const anchorDay = configured.getDate();
+        let anchor = new Date(today.getFullYear(), today.getMonth(), clampDay(today.getFullYear(), today.getMonth(), anchorDay));
 
-        while (anchor < today) {
-          const nextMonth = anchor.getMonth() + 1;
-          const nextYear = anchor.getFullYear() + Math.floor(nextMonth / 12);
-          const normalizedMonth = nextMonth % 12;
-          anchor = new Date(nextYear, normalizedMonth, clampDay(nextYear, normalizedMonth, anchorDay));
+        // If this month's payday has not happened yet, the current paycheck
+        // period began on the matching day in the previous month.
+        if (anchor > today) {
+          anchor = new Date(today.getFullYear(), today.getMonth() - 1, clampDay(today.getFullYear(), today.getMonth() - 1, anchorDay));
         }
 
         for (let i = 0; i < count; i++) {
@@ -1236,8 +1272,10 @@
       let anchor = dateFromKey(settings.nextPayDate);
       const stepDays = settings.payFrequency === "weekly" ? 7 : 14;
 
-      while (anchor < today) {
-        anchor = addDays(anchor, stepDays);
+      // Walk backward from the configured payday until we reach the most
+      // recent payday on or before today. That is the current paycheck period.
+      while (anchor > today) {
+        anchor = addDays(anchor, -stepDays);
       }
 
       for (let i = 0; i < count; i++) {
@@ -1248,6 +1286,16 @@
       }
 
       return buildPaycheckPeriods(paychecks);
+    }
+
+    function getMostRecentSemimonthlyPayDate(date) {
+      const current = startOfDay(date);
+
+      if (current.getDate() >= 15) {
+        return new Date(current.getFullYear(), current.getMonth(), 15);
+      }
+
+      return new Date(current.getFullYear(), current.getMonth() - 1, 15);
     }
 
     function buildPaycheckPeriods(paychecks) {
