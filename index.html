@@ -121,7 +121,7 @@
 </main>
 
 <script>
-const BILL_STORAGE_KEY="billTracker.bills.v2", SETTINGS_STORAGE_KEY="billTracker.settings.v2", PAYCHECK_COUNT=6;
+const BILL_STORAGE_KEY="billTracker.bills.v2", SETTINGS_STORAGE_KEY="billTracker.settings.v2", PAID_STORAGE_KEY="billTracker.paid.v1", PAYCHECK_COUNT=6;
 const DEFAULT_BILLS=["Rent / Mortgage","Electric","Water","Garbage","Internet","Phone","Car Payment","Car Insurance","Car Registration","Health Insurance","Credit Card","Loan","Amazon Membership","Streaming","Storage","Gym","Subscription","Other"];
 const MONTH_NAMES=["January","February","March","April","May","June","July","August","September","October","November","December"];
 const WEEKDAY_NAMES=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -129,6 +129,7 @@ const els={todayLine:document.getElementById("todayLine"),calendarTitle:document
 
 let today=startOfDay(new Date()), visibleMonth=new Date(today.getFullYear(),today.getMonth(),1), selectedDateKey=dateKey(today), editingBillId=null;
 let bills=loadBills(), settings=loadSettings();
+let paidOccurrences=loadPaidOccurrences();
 
 function startOfDay(date){return new Date(date.getFullYear(),date.getMonth(),date.getDate())}
 function dateKey(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`}
@@ -146,13 +147,42 @@ function loadBills(){try{const saved=JSON.parse(localStorage.getItem(BILL_STORAG
 function loadSettings(){const defaultNextPayday=getUpcomingFriday(today),defaults={paycheckAmount:"",cushionTarget:400,payFrequency:"biweekly",nextPayDate:formatDateInput(defaultNextPayday)};try{const saved=JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY)||"{}"),merged={...defaults,...saved};merged.paycheckAmount=merged.paycheckAmount??"";merged.cushionTarget=merged.cushionTarget??400;if(!["weekly","biweekly","semimonthly","monthly"].includes(merged.payFrequency))merged.payFrequency="biweekly";if(!merged.nextPayDate)merged.nextPayDate=formatDateInput(defaultNextPayday);return merged}catch(e){return defaults}}
 function saveBills(){localStorage.setItem(BILL_STORAGE_KEY,JSON.stringify(bills))}
 function saveSettings(){localStorage.setItem(SETTINGS_STORAGE_KEY,JSON.stringify(settings))}
+function loadPaidOccurrences(){try{const saved=JSON.parse(localStorage.getItem(PAID_STORAGE_KEY)||"{}");return saved&&typeof saved==="object"&&!Array.isArray(saved)?saved:{}}catch(e){return{}}}
+function savePaidOccurrences(){localStorage.setItem(PAID_STORAGE_KEY,JSON.stringify(paidOccurrences))}
+function occurrenceKey(bill,dueDate){return `${bill.id}::${dateKey(dueDate)}`}
+function isOccurrencePaid(bill,dueDate){return !!paidOccurrences[occurrenceKey(bill,dueDate)]}
+function getOccurrencePaidDate(bill,dueDate){const value=paidOccurrences[occurrenceKey(bill,dueDate)];return value?dateFromKey(value):null}
+function toggleOccurrencePaid(billId,dueDateKey){const key=`${billId}::${dueDateKey}`;if(paidOccurrences[key])delete paidOccurrences[key];else paidOccurrences[key]=dateKey(today);savePaidOccurrences();render()}
 function normalizeBill(bill){if(!bill||!bill.name)return null;let frequency=String(bill.frequency??bill.billFrequency??bill.freq??bill.repeat??"monthly").toLowerCase().trim();if(["every other month","every-other-month","everyothermonth","bimonthly","bi-monthly"].includes(frequency))frequency="every_other_month";if(["annual","annually","year","once a year"].includes(frequency))frequency="yearly";if(!["monthly","every_other_month","yearly"].includes(frequency))frequency="monthly";let dueDay=bill.dueDay??bill.due_day??bill.day??bill.due??bill.billDueDay??bill.dueDate??bill.date;if(typeof dueDay==="string"&&dueDay.includes("-"))dueDay=dueDay.split("-").map(Number)[2];dueDay=Math.min(31,Math.max(1,Number(dueDay)||1));let startMonth=bill.startMonth??bill.start_month??bill.month??bill.dueMonth??today.getMonth();if(typeof bill.dueDate==="string"&&bill.dueDate.includes("-")){const p=bill.dueDate.split("-").map(Number);if(Number.isFinite(p[1]))startMonth=p[1]-1}startMonth=parseMonthValue(startMonth,today.getMonth());return{id:bill.id||makeId(),name:String(bill.name).trim(),amount:Number(bill.amount)||0,dueDay,frequency,startMonth}}
 function getUpcomingFriday(fromDate){const date=startOfDay(fromDate),day=date.getDay(),diff=(5-day+7)%7;return addDays(date,diff)}
 function getCushionTarget(){return Math.max(0,Number(settings.cushionTarget)||0)}
 function billOccursInMonth(bill,year,monthIndex){if(bill.frequency==="yearly")return Number(bill.startMonth)===monthIndex;if(bill.frequency==="every_other_month"){const difference=(monthIndex-Number(bill.startMonth)+12)%12;return difference%2===0}return true}
 function getBillDueDateInMonth(bill,year,monthIndex){return new Date(year,monthIndex,clampDay(year,monthIndex,bill.dueDay))}
 function getBillsForDate(date){const y=date.getFullYear(),m=date.getMonth(),d=date.getDate();return bills.filter(b=>billOccursInMonth(b,y,m)).filter(b=>clampDay(y,m,b.dueDay)===d).sort((a,b)=>a.name.localeCompare(b.name))}
-function getBillOccurrencesBetween(startDate,endDate){const start=startOfDay(startDate),end=startOfDay(endDate),results=[];let cursor=new Date(start.getFullYear(),start.getMonth(),1),endMonth=new Date(end.getFullYear(),end.getMonth(),1);while(cursor<=endMonth){const y=cursor.getFullYear(),m=cursor.getMonth();bills.forEach(b=>{if(!billOccursInMonth(b,y,m))return;const dueDate=getBillDueDateInMonth(b,y,m);if(dueDate>=start&&dueDate<end)results.push({...b,dueDate})});cursor=new Date(y,m+1,1)}return results.sort((a,b)=>a.dueDate-b.dueDate||a.name.localeCompare(b.name))}
+function getBillOccurrencesBetween(startDate,endDate){
+  const start=startOfDay(startDate),end=startOfDay(endDate),results=[];
+  // Scan a generous window around the paycheck period so a bill paid early
+  // can move from its future due paycheck into the paycheck in which it was paid.
+  let cursor=new Date(start.getFullYear(),start.getMonth()-12,1);
+  const endMonth=new Date(end.getFullYear(),end.getMonth()+12,1);
+  while(cursor<=endMonth){
+    const y=cursor.getFullYear(),m=cursor.getMonth();
+    bills.forEach(b=>{
+      if(!billOccursInMonth(b,y,m))return;
+      const dueDate=getBillDueDateInMonth(b,y,m);
+      const paidDate=getOccurrencePaidDate(b,dueDate);
+      const effectiveDate=paidDate||dueDate;
+      if(effectiveDate>=start&&effectiveDate<end){
+        results.push({...b,dueDate,paidDate,paidEarly:!!paidDate&&dateKey(paidDate)!==dateKey(dueDate)});
+      }
+    });
+    cursor=new Date(y,m+1,1);
+  }
+  return results.sort((a,b)=>{
+    const ad=a.paidDate||a.dueDate,bd=b.paidDate||b.dueDate;
+    return ad-bd||a.dueDate-b.dueDate||a.name.localeCompare(b.name)
+  });
+}
 
 function getPayDatesForCalendar(year,monthIndex){const start=new Date(year,monthIndex,1),end=new Date(year,monthIndex+1,1),dates=[];if(settings.payFrequency==="semimonthly"){const first=new Date(year,monthIndex,1),fifteenth=new Date(year,monthIndex,15);if(first>=start&&first<end)dates.push(first);if(fifteenth>=start&&fifteenth<end)dates.push(fifteenth);return dates}let anchor=dateFromKey(settings.nextPayDate),stepDays=settings.payFrequency==="weekly"?7:14;if(settings.payFrequency==="monthly"){let cursor=new Date(anchor);while(cursor>=start)cursor=addMonths(cursor,-1);cursor=addMonths(cursor,1);while(cursor<end){if(cursor>=start)dates.push(cursor);cursor=addMonths(cursor,1)}return dates}while(anchor>start)anchor=addDays(anchor,-stepDays);while(anchor<end){if(anchor>=start)dates.push(anchor);anchor=addDays(anchor,stepDays)}return dates}
 
@@ -200,7 +230,48 @@ function render(){today=startOfDay(new Date());els.todayLine.textContent=formatL
 function renderCalendar(){const year=visibleMonth.getFullYear(),monthIndex=visibleMonth.getMonth(),firstDay=new Date(year,monthIndex,1),lastDay=new Date(year,monthIndex+1,0),payDates=getPayDatesForCalendar(year,monthIndex).map(dateKey);els.calendarTitle.textContent=`${MONTH_NAMES[monthIndex]} ${year}`;els.calendarGrid.innerHTML="";for(let i=0;i<firstDay.getDay();i++){const blank=document.createElement("div");blank.className="day empty";els.calendarGrid.appendChild(blank)}for(let day=1;day<=lastDay.getDate();day++){const date=new Date(year,monthIndex,day),key=dateKey(date),dayBills=getBillsForDate(date),isPayday=payDates.includes(key),button=document.createElement("button");button.type="button";button.className="day";if(key===dateKey(today))button.classList.add("today");if(key===selectedDateKey)button.classList.add("selected");button.innerHTML=`<span class="day-number">${day}</span><span class="dots">${isPayday?`<span class="dot pay"></span>`:""}${dayBills.map(()=>`<span class="dot bill"></span>`).join("")}</span>`;button.addEventListener("click",()=>{selectedDateKey=key;renderCalendar();renderSelectedDay()});els.calendarGrid.appendChild(button)}}
 function renderSelectedDay(){const date=dateFromKey(selectedDateKey),dayBills=getBillsForDate(date),nextChecks=getNextPaychecks(PAYCHECK_COUNT),selectedCheck=nextChecks.find(c=>dateKey(c.date)===selectedDateKey),calendarPayDates=getPayDatesForCalendar(date.getFullYear(),date.getMonth()).map(dateKey),isPayday=calendarPayDates.includes(selectedDateKey);let html=`<h3>${formatLongDate(date)}</h3>`;if(isPayday){const check=selectedCheck||buildBasicCalendarCheck(date);html+=`<p class="small-note"><strong>Payday.</strong> Pay these bills from this paycheck:</p>`;if(check.bills.length){html+=`<ul class="mini-list">`;check.bills.forEach(b=>{html+=`<li><span>${formatShortDate(b.dueDate)}</span><span>${escapeHtml(b.name)}</span><strong>${formatMoney(b.amount)}</strong></li>`});html+=`</ul>`}else html+=`<p class="small-note">No bills are assigned to this paycheck period.</p>`}else if(dayBills.length){html+=`<ul class="mini-list">`;dayBills.forEach(b=>{html+=`<li><span>Due</span><span>${escapeHtml(b.name)}</span><strong>${formatMoney(b.amount)}</strong></li>`});html+=`</ul>`}else html+=`<p class="small-note">No bills or payday events on this day.</p>`;els.selectedDayBox.innerHTML=html}
 function buildBasicCalendarCheck(payDate){const nextDate=estimateNextPayDate(payDate),periodBills=getBillOccurrencesBetween(payDate,nextDate);return{date:payDate,nextDate,bills:periodBills,billTotal:periodBills.reduce((sum,b)=>sum+Number(b.amount||0),0)}}
-function renderPaychecks(){const checks=getNextPaychecks(PAYCHECK_COUNT);if(!checks.length){els.paycheckArea.innerHTML=`<div class="empty-state">Set up your paycheck information first.</div>`;return}els.paycheckArea.innerHTML=checks.map((check,index)=>{let billHtml="";if(check.bills.length){billHtml+=`<ul class="bill-lines">`;check.bills.forEach(b=>{billHtml+=`<li><span class="bill-date-tag">${formatShortDate(b.dueDate)}</span><span>${escapeHtml(b.name)}</span><strong>${formatMoney(b.amount)}</strong></li>`});if(check.cushionFromPrevious>0)billHtml+=`<li class="cushion-line"><span>Use</span><span>Cushion</span><strong>+${formatMoney(check.cushionFromPrevious)}</strong></li>`;if(check.holdForNext>0)billHtml+=`<li class="cushion-line"><span>Save</span><span>Cushion</span><strong>-${formatMoney(check.holdForNext)}</strong></li>`;if(check.warning)billHtml+=`<li class="cushion-line"><span>Short</span><span>Cushion</span><strong>-${formatMoney(check.warning)}</strong></li>`;billHtml+=`</ul>`}else{billHtml=`<p class="small-note">No bills are assigned to this paycheck period.</p>`;if(check.holdForNext>0||check.cushionFromPrevious>0||check.warning){billHtml+=`<ul class="bill-lines">`;if(check.cushionFromPrevious>0)billHtml+=`<li class="cushion-line"><span>Use</span><span>Cushion</span><strong>+${formatMoney(check.cushionFromPrevious)}</strong></li>`;if(check.holdForNext>0)billHtml+=`<li class="cushion-line"><span>Save</span><span>Cushion</span><strong>-${formatMoney(check.holdForNext)}</strong></li>`;if(check.warning)billHtml+=`<li class="cushion-line"><span>Short</span><span>Cushion</span><strong>-${formatMoney(check.warning)}</strong></li>`;billHtml+=`</ul>`}}const warningHtml=check.warning?`<div class="warning">This first visible paycheck is short ${formatMoney(check.warning)} from the cushion target.</div>`:"",finalClass=check.finalLeft<0?"money-out":"money-left";return`<article class="paycheck-card"><div class="paycheck-top"><div><h3>Paycheck ${index+1}</h3><p>${formatLongDate(check.date)} to ${formatShortDate(addDays(check.nextDate,-1))}</p></div><span class="pill">${formatMoney(check.amount||0)}</span></div>${billHtml}${warningHtml}<div class="summary-row"><div class="summary-box"><span>Bills from this check</span><strong class="money-out">${formatMoney(check.billTotal)}</strong></div><div class="summary-box"><span>${check.amount?"Left after bills and cushion":"Paycheck amount"}</span><strong class="${finalClass}">${formatMoney(check.amount?check.finalLeft:0)}</strong></div></div></article>`}).join("")}
+function renderPaychecks(){
+  const checks=getNextPaychecks(PAYCHECK_COUNT);
+  if(!checks.length){els.paycheckArea.innerHTML=`<div class="empty-state">Set up your paycheck information first.</div>`;return}
+  els.paycheckArea.innerHTML=checks.map((check,index)=>{
+    let billHtml="";
+    if(check.bills.length){
+      billHtml+=`<ul class="bill-lines">`;
+      check.bills.forEach(b=>{
+        const paidClass=b.paidDate?" paid-line":"";
+        const paidLabel=b.paidEarly?`<span class="paid-early-tag">Paid early</span>`:"";
+        billHtml+=`<li class="bill-line${paidClass}">
+          <span class="bill-date-tag">${formatShortDate(b.dueDate)}</span>
+          <span class="bill-name-cell"><span>${escapeHtml(b.name)}</span>${paidLabel}</span>
+          <span class="bill-pay-cell"><strong>${formatMoney(b.amount)}</strong><label class="paid-check"><input type="checkbox" data-paid-bill="${b.id}" data-paid-due="${dateKey(b.dueDate)}" ${b.paidDate?"checked":""}><span>Paid</span></label></span>
+        </li>`
+      });
+      if(check.cushionFromPrevious>0)billHtml+=`<li class="cushion-line"><span>Use</span><span>Cushion</span><strong>+${formatMoney(check.cushionFromPrevious)}</strong></li>`;
+      if(check.holdForNext>0)billHtml+=`<li class="cushion-line"><span>Save</span><span>Cushion</span><strong>-${formatMoney(check.holdForNext)}</strong></li>`;
+      if(check.warning)billHtml+=`<li class="cushion-line"><span>Short</span><span>Cushion</span><strong>-${formatMoney(check.warning)}</strong></li>`;
+      billHtml+=`</ul>`
+    }else{
+      billHtml=`<p class="small-note">No bills are assigned to this paycheck period.</p>`;
+      if(check.holdForNext>0||check.cushionFromPrevious>0||check.warning){
+        billHtml+=`<ul class="bill-lines">`;
+        if(check.cushionFromPrevious>0)billHtml+=`<li class="cushion-line"><span>Use</span><span>Cushion</span><strong>+${formatMoney(check.cushionFromPrevious)}</strong></li>`;
+        if(check.holdForNext>0)billHtml+=`<li class="cushion-line"><span>Save</span><span>Cushion</span><strong>-${formatMoney(check.holdForNext)}</strong></li>`;
+        if(check.warning)billHtml+=`<li class="cushion-line"><span>Short</span><span>Cushion</span><strong>-${formatMoney(check.warning)}</strong></li>`;
+        billHtml+=`</ul>`
+      }
+    }
+    const warningHtml=check.warning?`<div class="warning">This first visible paycheck is short ${formatMoney(check.warning)} from the cushion target.</div>`:"";
+    const finalClass=check.finalLeft<0?"money-out":"money-left";
+    return `<article class="paycheck-card">
+      <div class="paycheck-top"><div><h3>Paycheck ${index+1}</h3><p>${formatLongDate(check.date)} to ${formatShortDate(addDays(check.nextDate,-1))}</p></div><span class="pill">${formatMoney(check.amount||0)}</span></div>
+      ${billHtml}${warningHtml}
+      <div class="summary-row"><div class="summary-box"><span>Bills from this check</span><strong class="money-out">${formatMoney(check.billTotal)}</strong></div><div class="summary-box"><span>${check.amount?"Left after bills and cushion":"Paycheck amount"}</span><strong class="${finalClass}">${formatMoney(check.amount?check.finalLeft:0)}</strong></div></div>
+    </article>`
+  }).join("");
+  els.paycheckArea.querySelectorAll("[data-paid-bill]").forEach(input=>{
+    input.addEventListener("change",()=>toggleOccurrencePaid(input.dataset.paidBill,input.dataset.paidDue));
+  });
+}
 function renderBills(){const sorted=[...bills].sort((a,b)=>a.dueDay!==b.dueDay?a.dueDay-b.dueDay:a.name.localeCompare(b.name));els.billCountPill.textContent=`${bills.length} ${bills.length===1?"bill":"bills"}`;if(!sorted.length){els.billList.innerHTML=`<div class="empty-state">No bills yet. Add your first bill below.</div>`;return}els.billList.innerHTML=`<div class="bill-list">${sorted.map(b=>`<article class="bill-item"><div><h3>${escapeHtml(b.name)} — ${formatMoney(b.amount)}</h3><p>Due day ${b.dueDay} • ${getFrequencyLabel(b)}</p></div><div class="bill-actions"><button class="btn btn-small btn-blue" type="button" data-edit="${b.id}">Edit</button><button class="btn btn-small btn-danger" type="button" data-delete="${b.id}">Delete</button></div></article>`).join("")}</div>`;els.billList.querySelectorAll("[data-edit]").forEach(btn=>btn.addEventListener("click",()=>startEditBill(btn.dataset.edit)));els.billList.querySelectorAll("[data-delete]").forEach(btn=>btn.addEventListener("click",()=>deleteBill(btn.dataset.delete)))}
 function getFrequencyLabel(b){if(b.frequency==="yearly")return`Yearly in ${MONTH_NAMES[Number(b.startMonth)]}`;if(b.frequency==="every_other_month")return`Every other month from ${MONTH_NAMES[Number(b.startMonth)]}`;return"Monthly"}
 function renderSetupPreview(){const amount=Number(settings.paycheckAmount)||0,cushion=getCushionTarget(),nextDate=settings.nextPayDate?formatLongDate(dateFromKey(settings.nextPayDate)):"Not set",frequencyLabel={weekly:"Weekly",biweekly:"Every 2 weeks",semimonthly:"1st and 15th",monthly:"Monthly"}[settings.payFrequency]||"Every 2 weeks";els.setupPreview.innerHTML=`<strong>Current setup:</strong><br>Paycheck: ${formatMoney(amount)} • Cushion target: ${formatMoney(cushion)}<br>Frequency: ${frequencyLabel} • Next payday: ${nextDate}`}
@@ -213,8 +284,8 @@ function startEditBill(id){const bill=bills.find(item=>item.id===id);if(!bill)re
 function deleteBill(id){const bill=bills.find(item=>item.id===id);if(!bill)return;if(!confirm(`Delete ${bill.name}?`))return;bills=bills.filter(item=>item.id!==id);saveBills();if(editingBillId===id)clearBillForm();render()}
 function clearBillForm(){editingBillId=null;els.billFormTitle.textContent="Add Bill";els.billName.value="";els.billAmount.value="";els.billDueDay.value="1";els.billFrequency.value="monthly";updateFrequencyMonthPicker()}
 function saveSettingsFromForm(){settings={paycheckAmount:els.paycheckAmount.value,cushionTarget:Number(els.cushionTarget.value)||0,payFrequency:els.payFrequency.value,nextPayDate:els.nextPayDate.value||formatDateInput(today)};saveSettings();render();els.backupStatus.textContent="Paycheck setup saved."}
-function exportBackup(){const cleanBills=bills.map(b=>({id:b.id,name:b.name,amount:Number(b.amount)||0,dueDay:Number(b.dueDay)||1,frequency:b.frequency||"monthly",startMonth:parseMonthValue(b.startMonth,today.getMonth())})),backup={version:14,exportedAt:new Date().toISOString(),bills:cleanBills,settings:{paycheckAmount:settings.paycheckAmount??"",cushionTarget:settings.cushionTarget??400,payFrequency:settings.payFrequency??"biweekly",nextPayDate:settings.nextPayDate??formatDateInput(today)}};const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=`my-bills-backup-${dateKey(today)}.json`;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);els.backupStatus.textContent="Backup exported with due days and frequencies saved."}
-function importBackup(file){if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result),importedBills=data.bills||data.billData||data.items||data.savedBills||[];if(!Array.isArray(importedBills))throw new Error("Backup does not contain bills.");bills=importedBills.map(normalizeBill).filter(Boolean);settings={...loadSettings(),...(data.settings||{})};settings.paycheckAmount=settings.paycheckAmount??"";settings.cushionTarget=settings.cushionTarget??400;settings.payFrequency=settings.payFrequency??"biweekly";settings.nextPayDate=settings.nextPayDate??formatDateInput(today);saveBills();saveSettings();fillSettingsForm();clearBillForm();render();els.backupStatus.textContent="Backup imported with due days and frequencies restored.";els.importFile.value=""}catch(err){els.backupStatus.textContent="Could not import that backup file.";alert("Could not import that backup file.")}};reader.readAsText(file)}
+function exportBackup(){const cleanBills=bills.map(b=>({id:b.id,name:b.name,amount:Number(b.amount)||0,dueDay:Number(b.dueDay)||1,frequency:b.frequency||"monthly",startMonth:parseMonthValue(b.startMonth,today.getMonth())})),backup={version:14,exportedAt:new Date().toISOString(),bills:cleanBills,settings:{paycheckAmount:settings.paycheckAmount??"",cushionTarget:settings.cushionTarget??400,payFrequency:settings.payFrequency??"biweekly",nextPayDate:settings.nextPayDate??formatDateInput(today)},paidOccurrences};;const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=`my-bills-backup-${dateKey(today)}.json`;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);els.backupStatus.textContent="Backup exported with due days and frequencies saved."}
+function importBackup(file){if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result),importedBills=data.bills||data.billData||data.items||data.savedBills||[];if(!Array.isArray(importedBills))throw new Error("Backup does not contain bills.");bills=importedBills.map(normalizeBill).filter(Boolean);settings={...loadSettings(),...(data.settings||{})};settings.paycheckAmount=settings.paycheckAmount??"";settings.cushionTarget=settings.cushionTarget??400;settings.payFrequency=settings.payFrequency??"biweekly";settings.nextPayDate=settings.nextPayDate??formatDateInput(today);paidOccurrences=(data.paidOccurrences&&typeof data.paidOccurrences==="object"&&!Array.isArray(data.paidOccurrences))?data.paidOccurrences:paidOccurrences;saveBills();saveSettings();savePaidOccurrences();fillSettingsForm();clearBillForm();render();els.backupStatus.textContent="Backup imported with due days and frequencies restored.";els.importFile.value=""}catch(err){els.backupStatus.textContent="Could not import that backup file.";alert("Could not import that backup file.")}};reader.readAsText(file)}
 function escapeHtml(value){return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
 function checkForNewDay(){const current=startOfDay(new Date());if(dateKey(current)!==dateKey(today)){today=current;selectedDateKey=dateKey(today);visibleMonth=new Date(today.getFullYear(),today.getMonth(),1);render()}}
 els.prevMonthBtn.addEventListener("click",()=>{visibleMonth=new Date(visibleMonth.getFullYear(),visibleMonth.getMonth()-1,1);renderCalendar();renderSelectedDay()});
