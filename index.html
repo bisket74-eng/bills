@@ -2,2000 +2,229 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>My Bills</title>  <meta name="theme-color" content="#eafbe7" />
+  <title>My Bills</title>
+  <meta name="theme-color" content="#eafbe7" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="My Bills" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <link rel="manifest" href="./manifest.json" />  <style>
+  <link rel="manifest" href="./manifest.json" />
+  <style>
     :root {
-      --bg1: #eafbe7;
-      --bg2: #e8f4ff;
-      --bg3: #fff4d9;
-      --ink: #24302b;
-      --muted: #6d7a72;
-      --card: rgba(255, 255, 255, 0.86);
-      --green: #76c893;
-      --green-dark: #3b7f5a;
-      --blue: #8ecae6;
-      --yellow: #ffe08a;
-      --pink: #ffd6e0;
-      --purple: #ddd0ff;
-      --danger: #e76f51;
-      --shadow: 0 12px 28px rgba(43, 67, 55, 0.14);
-      --radius: 24px;
-    }
-
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      min-height: 100%;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--ink);
-      background:
-        radial-gradient(circle at 10% 5%, rgba(255, 224, 138, 0.75), transparent 28%),
-        radial-gradient(circle at 90% 10%, rgba(221, 208, 255, 0.8), transparent 30%),
-        radial-gradient(circle at 20% 92%, rgba(142, 202, 230, 0.7), transparent 32%),
-        linear-gradient(145deg, var(--bg1), var(--bg2) 52%, var(--bg3));
-      background-attachment: fixed;
-    }
-
-    body {
-      padding: 14px;
-      padding-bottom: 34px;
-    }
-
-    button,
-    input,
-    select,
-    textarea {
-      font: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    .app {
-      width: 100%;
-      max-width: 860px;
-      margin: 0 auto;
-    }
-
-    .top-header {
-      text-align: center;
-      padding: 22px 12px 16px;
-    }
-
-    .top-header h1 {
-      margin: 0;
-      font-size: 2.35rem;
-      line-height: 1;
-      letter-spacing: -1px;
-    }
-
-    .top-header p {
-      margin: 9px 0 0;
-      color: var(--muted);
-      font-size: 0.98rem;
-    }
-
-    .card {
-      background: var(--card);
-      border: 1px solid rgba(255, 255, 255, 0.85);
-      box-shadow: var(--shadow);
-      border-radius: var(--radius);
-      padding: 16px;
-      margin: 14px 0;
-      backdrop-filter: blur(12px);
-      overflow: hidden;
-    }
-
-    .card-calendar {
-      background: linear-gradient(135deg, rgba(234, 251, 231, 0.92), rgba(232, 244, 255, 0.88));
-    }
-
-    .card-next {
-      background: linear-gradient(135deg, rgba(255, 248, 220, 0.92), rgba(232, 244, 255, 0.86));
-    }
-
-    .card-bills {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(221, 208, 255, 0.42));
-    }
-
-    .card-add {
-      background: linear-gradient(135deg, rgba(255, 246, 250, 0.92), rgba(234, 251, 231, 0.86));
-    }
-
-    .card-setup {
-      background: linear-gradient(135deg, rgba(232, 244, 255, 0.92), rgba(255, 244, 217, 0.84));
-    }
-
-    .card-backup {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(255, 224, 138, 0.36));
-    }
-
-    .section-title {
-      margin: 0 0 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      font-size: 1.2rem;
-    }
-
-    .small-note {
-      color: var(--muted);
-      font-size: 0.84rem;
-      line-height: 1.35;
-      margin: 5px 0 0;
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      padding: 7px 11px;
-      font-size: 0.78rem;
-      font-weight: 800;
-      background: rgba(255, 255, 255, 0.75);
-      color: var(--green-dark);
-      border: 1px solid rgba(59, 127, 90, 0.16);
-      white-space: nowrap;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 11px;
-    }
-
-    label {
-      display: block;
-      font-size: 0.78rem;
-      font-weight: 800;
-      color: #435148;
-      margin-bottom: 5px;
-    }
-
-    input,
-    select,
-    textarea {
-      width: 100%;
-      border: 1px solid rgba(54, 75, 63, 0.16);
-      border-radius: 17px;
-      background: rgba(255, 255, 255, 0.82);
-      padding: 12px 13px;
-      color: var(--ink);
-      outline: none;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-    }
-
-    input:focus,
-    select:focus,
-    textarea:focus {
-      border-color: rgba(59, 127, 90, 0.48);
-      box-shadow: 0 0 0 4px rgba(118, 200, 147, 0.18);
-    }
-
-    .two-col {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .three-col {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-    }
-
-    .btn-row {
-      display: flex;
-      gap: 9px;
-      flex-wrap: wrap;
-      margin-top: 12px;
-    }
-
-    .btn {
-      border: 0;
-      border-radius: 999px;
-      padding: 11px 15px;
-      font-size: 0.95rem;
-      line-height: 1;
-      font-weight: 900;
-      color: #20352a;
-      background: rgba(255, 255, 255, 0.82);
-      box-shadow: 0 7px 16px rgba(43, 67, 55, 0.12);
-      min-height: 44px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #8be0a7, #d7f7df);
-      color: #1f5c3c;
-    }
-
-    .btn-blue {
-      background: linear-gradient(135deg, #a9def9, #e8f4ff);
-      color: #225777;
-    }
-
-    .btn-yellow {
-      background: linear-gradient(135deg, #ffe08a, #fff5cb);
-      color: #765c12;
-    }
-
-    .btn-danger {
-      background: linear-gradient(135deg, #ffb3a2, #ffe2dc);
-      color: #9b2f19;
-    }
-
-    .btn-small {
-      min-height: 34px;
-      padding: 7px 10px;
-      font-size: 0.78rem;
-    }
-
-    .hide {
-      display: none !important;
-    }
-
-    .calendar-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    .calendar-head h2 {
-      margin: 0;
-      font-size: 1.1rem;
-      text-align: center;
-      flex: 1;
-    }
-
-    .cal-nav {
-      width: 42px;
-      height: 38px;
-      border: 0;
-      border-radius: 15px;
-      background: rgba(255, 255, 255, 0.72);
-      font-weight: 1000;
-      color: var(--green-dark);
-      box-shadow: 0 5px 12px rgba(43, 67, 55, 0.11);
-    }
-
-    .weekdays,
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-    }
-
-    .weekdays span {
-      text-align: center;
-      font-size: 0.72rem;
-      font-weight: 900;
-      color: var(--muted);
-      padding: 2px 0;
-    }
-
-    .day {
-      min-height: 56px;
-      border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.72);
-      background: rgba(255, 255, 255, 0.58);
-      padding: 6px 5px;
-      position: relative;
-      text-align: left;
-      color: var(--ink);
-      overflow: hidden;
-    }
-
-    .day.empty {
-      opacity: 0.28;
-      background: rgba(255, 255, 255, 0.25);
-    }
-
-    .day.today {
-      outline: 3px solid rgba(118, 200, 147, 0.45);
-    }
-
-    .day.selected {
-      outline: 3px solid rgba(255, 224, 138, 0.8);
-      background: rgba(255, 255, 255, 0.86);
-    }
-
-    .day-number {
-      display: block;
-      font-size: 0.78rem;
-      font-weight: 900;
-    }
-
-    .dots {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 3px;
-      margin-top: 5px;
-    }
-
-    .dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      background: var(--green);
-      display: inline-block;
-    }
-
-    .dot.pay {
-      background: #4ea8de;
-    }
-
-    .dot.bill {
-      background: #f4a261;
-    }
-
-    .selected-day-box {
-      margin-top: 12px;
-      padding: 12px;
-      background: rgba(255, 255, 255, 0.62);
-      border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.72);
-    }
-
-    .selected-day-box h3 {
-      margin: 0 0 8px;
-      font-size: 1rem;
-    }
-
-    .mini-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: grid;
-      gap: 6px;
-    }
-
-    .mini-list li {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 8px;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.66);
-      padding: 8px 9px;
-      border-radius: 13px;
-      font-size: 0.86rem;
-    }
-
-    .paycheck-card {
-      background: linear-gradient(135deg, rgba(255, 248, 220, 0.92), rgba(232, 244, 255, 0.86));
-      border-radius: 22px;
-      padding: 14px;
-      margin: 11px 0;
-      border: 1px solid rgba(255, 255, 255, 0.72);
-      box-shadow: 0 8px 18px rgba(43, 67, 55, 0.1);
-    }
-
-    .paycheck-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      align-items: flex-start;
-      margin-bottom: 10px;
-    }
-
-    .paycheck-top h3 {
-      margin: 0;
-      font-size: 1.05rem;
-    }
-
-    .paycheck-top p {
-      margin: 3px 0 0;
-      color: var(--muted);
-      font-size: 0.84rem;
-    }
-
-    .bill-lines {
-      list-style: none;
-      padding: 0;
-      margin: 10px 0 0;
-      display: grid;
-      gap: 7px;
-    }
-
-    .bill-lines li {
-      display: grid;
-      grid-template-columns: 52px 1fr auto;
-      gap: 8px;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.67);
-      border: 1px solid rgba(255, 255, 255, 0.68);
-      border-radius: 14px;
-      padding: 9px;
-      font-size: 0.88rem;
-    }
-
-    .bill-lines li strong {
-      white-space: nowrap;
-    }
-
-    .bill-date-tag {
-      font-size: 0.75rem;
-      font-weight: 900;
-      color: #5c6b61;
-      background: rgba(234, 251, 231, 0.95);
-      border-radius: 999px;
-      padding: 5px 7px;
-      text-align: center;
-    }
-
-    .cushion-line {
-      background: rgba(255, 255, 255, 0.78) !important;
-      color: #b8860b !important;
-      font-weight: 900;
-    }
-
-    .cushion-line span,
-    .cushion-line strong {
-      color: #b8860b !important;
-    }
-
-    .summary-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 9px;
-      margin-top: 11px;
-    }
-
-    .summary-box {
-      background: rgba(255, 255, 255, 0.68);
-      border: 1px solid rgba(255, 255, 255, 0.74);
-      border-radius: 17px;
-      padding: 10px;
-    }
-
-    .summary-box span {
-      display: block;
-      font-size: 0.72rem;
-      color: var(--muted);
-      font-weight: 850;
-      line-height: 1.2;
-    }
-
-    .summary-box strong {
-      display: block;
-      margin-top: 4px;
-      font-size: 1.08rem;
-    }
-
-    .money-out {
-      color: #9b2f19;
-    }
-
-    .money-left {
-      color: #2f7d50;
-    }
-
-    .warning {
-      margin-top: 9px;
-      background: rgba(255, 179, 162, 0.42);
-      color: #8d2f1c;
-      padding: 9px 10px;
-      border-radius: 14px;
-      font-size: 0.84rem;
-      font-weight: 850;
-    }
-
-    .bill-list {
-      display: grid;
-      gap: 9px;
-    }
-
-    .bill-item {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.66);
-      border-radius: 18px;
-      padding: 11px;
-      border: 1px solid rgba(255, 255, 255, 0.72);
-    }
-
-    .bill-item h3 {
-      margin: 0;
-      font-size: 0.98rem;
-    }
-
-    .bill-item p {
-      margin: 4px 0 0;
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-
-    .bill-actions {
-      display: flex;
-      gap: 6px;
-      flex-direction: column;
-    }
-
-    .empty-state {
-      text-align: center;
-      color: var(--muted);
-      padding: 16px 8px;
-      font-size: 0.92rem;
-    }
-
-    .setup-preview {
-      margin-top: 10px;
-      background: rgba(255, 255, 255, 0.58);
-      border-radius: 17px;
-      padding: 10px;
-      color: var(--muted);
-      font-size: 0.86rem;
-      line-height: 1.35;
-    }
-
-    .backup-box {
-      background: rgba(255, 255, 255, 0.6);
-      border-radius: 17px;
-      padding: 11px;
-      margin-top: 10px;
-    }
-
-    .file-input {
-      padding: 10px;
-      background: rgba(255, 255, 255, 0.72);
-    }
-
-    @media (min-width: 700px) {
-      body {
-        padding: 22px;
-      }
-
-      .form-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .full-width {
-        grid-column: 1 / -1;
-      }
-
-      .bill-actions {
-        flex-direction: row;
-      }
-    }
-
-    @media (max-width: 430px) {
-      body {
-        padding: 10px;
-        padding-bottom: 28px;
-      }
-
-      .card {
-        padding: 13px;
-        border-radius: 22px;
-      }
-
-      .top-header h1 {
-        font-size: 2rem;
-      }
-
-      .day {
-        min-height: 50px;
-        border-radius: 14px;
-        padding: 5px 4px;
-      }
-
-      .two-col,
-      .three-col,
-      .summary-row {
-        grid-template-columns: 1fr;
-      }
-
-      .bill-lines li {
-        grid-template-columns: 48px 1fr auto;
-        font-size: 0.82rem;
-      }
-    }
-  </style></head><body>
-  <main class="app">
-    <header class="top-header">
-      <h1>My Bills</h1>
-      <p id="todayLine">Your monthly bills and paycheck plan</p>
-    </header><section class="card card-calendar">
-  <div class="calendar-head">
-    <button class="cal-nav" id="prevMonthBtn" type="button">‹</button>
-    <h2 id="calendarTitle">Month Year</h2>
-    <button class="cal-nav" id="nextMonthBtn" type="button">›</button>
-  </div>
-
-  <div class="weekdays">
-    <span>Sun</span>
-    <span>Mon</span>
-    <span>Tue</span>
-    <span>Wed</span>
-    <span>Thu</span>
-    <span>Fri</span>
-    <span>Sat</span>
-  </div>
-
+      --bg1:#eafbe7;--bg2:#e8f4ff;--bg3:#fff4d9;--ink:#24302b;--muted:#6d7a72;
+      --card:rgba(255,255,255,.86);--green:#76c893;--green-dark:#3b7f5a;--blue:#8ecae6;
+      --yellow:#ffe08a;--pink:#ffd6e0;--purple:#ddd0ff;--danger:#e76f51;
+      --shadow:0 12px 28px rgba(43,67,55,.14);--radius:24px;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;padding:0;min-height:100%;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);
+      background:radial-gradient(circle at 10% 5%,rgba(255,224,138,.75),transparent 28%),radial-gradient(circle at 90% 10%,rgba(221,208,255,.8),transparent 30%),radial-gradient(circle at 20% 92%,rgba(142,202,230,.7),transparent 32%),linear-gradient(145deg,var(--bg1),var(--bg2) 52%,var(--bg3));background-attachment:fixed}
+    body{padding:14px;padding-bottom:34px}button,input,select,textarea{font:inherit}button{cursor:pointer}
+    .app{width:100%;max-width:860px;margin:0 auto}.top-header{text-align:center;padding:22px 12px 16px}
+    .top-header h1{margin:0;font-size:2.35rem;line-height:1;letter-spacing:-1px}.top-header p{margin:9px 0 0;color:var(--muted);font-size:.98rem}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.85);box-shadow:var(--shadow);border-radius:var(--radius);padding:16px;margin:14px 0;backdrop-filter:blur(12px);overflow:hidden}
+    .card-calendar{background:linear-gradient(135deg,rgba(234,251,231,.92),rgba(232,244,255,.88))}
+    .card-next{background:linear-gradient(135deg,rgba(255,248,220,.92),rgba(232,244,255,.86))}
+    .card-bills{background:linear-gradient(135deg,rgba(255,255,255,.88),rgba(221,208,255,.42))}
+    .card-add{background:linear-gradient(135deg,rgba(255,246,250,.92),rgba(234,251,231,.86))}
+    .card-setup{background:linear-gradient(135deg,rgba(232,244,255,.92),rgba(255,244,217,.84))}
+    .card-backup{background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(255,224,138,.36))}
+    .section-title{margin:0 0 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:1.2rem}
+    .small-note{color:var(--muted);font-size:.84rem;line-height:1.35;margin:5px 0 0}
+    .pill{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:7px 11px;font-size:.78rem;font-weight:800;background:rgba(255,255,255,.75);color:var(--green-dark);border:1px solid rgba(59,127,90,.16);white-space:nowrap}
+    .form-grid{display:grid;grid-template-columns:1fr;gap:11px}
+    label{display:block;font-size:.78rem;font-weight:800;color:#435148;margin-bottom:5px}
+    input,select,textarea{width:100%;border:1px solid rgba(54,75,63,.16);border-radius:17px;background:rgba(255,255,255,.82);padding:12px 13px;color:var(--ink);outline:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+    input:focus,select:focus,textarea:focus{border-color:rgba(59,127,90,.48);box-shadow:0 0 0 4px rgba(118,200,147,.18)}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .btn-row{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}
+    .btn{border:0;border-radius:999px;padding:11px 15px;font-size:.95rem;line-height:1;font-weight:900;color:#20352a;background:rgba(255,255,255,.82);box-shadow:0 7px 16px rgba(43,67,55,.12);min-height:44px;display:inline-flex;align-items:center;justify-content:center;text-align:center}
+    .btn-primary{background:linear-gradient(135deg,#8be0a7,#d7f7df);color:#1f5c3c}.btn-blue{background:linear-gradient(135deg,#a9def9,#e8f4ff);color:#225777}
+    .btn-yellow{background:linear-gradient(135deg,#ffe08a,#fff5cb);color:#765c12}.btn-danger{background:linear-gradient(135deg,#ffb3a2,#ffe2dc);color:#9b2f19}
+    .btn-small{min-height:34px;padding:7px 10px;font-size:.78rem}.hide{display:none!important}
+    .calendar-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+    .calendar-head h2{margin:0;font-size:1.1rem;text-align:center;flex:1}.cal-nav{width:42px;height:38px;border:0;border-radius:15px;background:rgba(255,255,255,.72);font-weight:1000;color:var(--green-dark);box-shadow:0 5px 12px rgba(43,67,55,.11)}
+    .weekdays,.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.weekdays span{text-align:center;font-size:.72rem;font-weight:900;color:var(--muted);padding:2px 0}
+    .day{min-height:56px;border-radius:16px;border:1px solid rgba(255,255,255,.72);background:rgba(255,255,255,.58);padding:6px 5px;position:relative;text-align:left;color:var(--ink);overflow:hidden}
+    .day.empty{opacity:.28;background:rgba(255,255,255,.25)}.day.today{outline:3px solid rgba(118,200,147,.45)}.day.selected{outline:3px solid rgba(255,224,138,.8);background:rgba(255,255,255,.86)}
+    .day-number{display:block;font-size:.78rem;font-weight:900}.dots{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}.dot{width:7px;height:7px;border-radius:999px;background:var(--green);display:inline-block}.dot.pay{background:#4ea8de}.dot.bill{background:#f4a261}
+    .selected-day-box{margin-top:12px;padding:12px;background:rgba(255,255,255,.62);border-radius:18px;border:1px solid rgba(255,255,255,.72)}
+    .selected-day-box h3{margin:0 0 8px;font-size:1rem}.mini-list{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+    .mini-list li{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;background:rgba(255,255,255,.66);padding:8px 9px;border-radius:13px;font-size:.86rem}
+    .paycheck-card{background:linear-gradient(135deg,rgba(255,248,220,.92),rgba(232,244,255,.86));border-radius:22px;padding:14px;margin:11px 0;border:1px solid rgba(255,255,255,.72);box-shadow:0 8px 18px rgba(43,67,55,.1)}
+    .paycheck-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px}.paycheck-top h3{margin:0;font-size:1.05rem}.paycheck-top p{margin:3px 0 0;color:var(--muted);font-size:.84rem}
+    .bill-lines{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:7px}.bill-lines li{display:grid;grid-template-columns:52px 1fr auto;gap:8px;align-items:center;background:rgba(255,255,255,.67);border:1px solid rgba(255,255,255,.68);border-radius:14px;padding:9px;font-size:.88rem}
+    .bill-lines li strong{white-space:nowrap}.bill-date-tag{font-size:.75rem;font-weight:900;color:#5c6b61;background:rgba(234,251,231,.95);border-radius:999px;padding:5px 7px;text-align:center}
+    .cushion-line{background:rgba(255,255,255,.78)!important;color:#b8860b!important;font-weight:900}.cushion-line span,.cushion-line strong{color:#b8860b!important}
+    .summary-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}.summary-box{background:rgba(255,255,255,.68);border:1px solid rgba(255,255,255,.74);border-radius:17px;padding:10px}
+    .summary-box span{display:block;font-size:.72rem;color:var(--muted);font-weight:850;line-height:1.2}.summary-box strong{display:block;margin-top:4px;font-size:1.08rem}
+    .money-out{color:#9b2f19}.money-left{color:#2f7d50}.warning{margin-top:9px;background:rgba(255,179,162,.42);color:#8d2f1c;padding:9px 10px;border-radius:14px;font-size:.84rem;font-weight:850}
+    .bill-list{display:grid;gap:9px}.bill-item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:rgba(255,255,255,.66);border-radius:18px;padding:11px;border:1px solid rgba(255,255,255,.72)}
+    .bill-item h3{margin:0;font-size:.98rem}.bill-item p{margin:4px 0 0;font-size:.8rem;color:var(--muted)}.bill-actions{display:flex;gap:6px;flex-direction:column}
+    .empty-state{text-align:center;color:var(--muted);padding:16px 8px;font-size:.92rem}.setup-preview{margin-top:10px;background:rgba(255,255,255,.58);border-radius:17px;padding:10px;color:var(--muted);font-size:.86rem;line-height:1.35}
+    .backup-box{background:rgba(255,255,255,.6);border-radius:17px;padding:11px;margin-top:10px}.file-input{padding:10px;background:rgba(255,255,255,.72)}
+    @media (min-width:700px){body{padding:22px}.form-grid{grid-template-columns:repeat(2,1fr)}.full-width{grid-column:1/-1}.bill-actions{flex-direction:row}}
+    @media (max-width:430px){body{padding:10px;padding-bottom:28px}.card{padding:13px;border-radius:22px}.top-header h1{font-size:2rem}.day{min-height:50px;border-radius:14px;padding:5px 4px}.two-col,.three-col,.summary-row{grid-template-columns:1fr}.bill-lines li{grid-template-columns:48px 1fr auto;font-size:.82rem}}
+  </style>
+</head>
+<body>
+<main class="app">
+<header class="top-header"><h1>My Bills</h1><p id="todayLine">Your monthly bills and paycheck plan</p></header>
+
+<section class="card card-calendar">
+  <div class="calendar-head"><button class="cal-nav" id="prevMonthBtn" type="button">‹</button><h2 id="calendarTitle">Month Year</h2><button class="cal-nav" id="nextMonthBtn" type="button">›</button></div>
+  <div class="weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
   <div class="calendar-grid" id="calendarGrid"></div>
-
-  <div class="selected-day-box" id="selectedDayBox">
-    <h3>Select a day</h3>
-    <p class="small-note">Tap a bill day or payday to see what is due.</p>
-  </div>
+  <div class="selected-day-box" id="selectedDayBox"><h3>Select a day</h3><p class="small-note">Tap a bill day or payday to see what is due.</p></div>
 </section>
 
 <section class="card card-next">
-  <h2 class="section-title">
-    Next 6 Paychecks
-    <span class="pill" id="cushionPill">Cushion: $0</span>
-  </h2>
+  <h2 class="section-title">Next 6 Paychecks <span class="pill" id="cushionPill">Cushion: $0</span></h2>
   <div id="paycheckArea"></div>
 </section>
 
 <section class="card card-bills">
-  <h2 class="section-title">
-    Bills
-    <span class="pill" id="billCountPill">0 bills</span>
-  </h2>
+  <h2 class="section-title">Bills <span class="pill" id="billCountPill">0 bills</span></h2>
   <div id="billList"></div>
 </section>
 
 <section class="card card-add" id="addBillSection">
   <h2 class="section-title" id="billFormTitle">Add Bill</h2>
-
   <div class="form-grid">
-    <div>
-      <label for="billName">Bill name</label>
-      <input id="billName" list="billSuggestions" placeholder="Electric, Rent, Phone..." />
-      <datalist id="billSuggestions"></datalist>
-    </div>
-
-    <div>
-      <label for="billAmount">Amount</label>
-      <input id="billAmount" type="number" min="0" step="0.01" placeholder="0.00" />
-    </div>
-
-    <div>
-      <label for="billDueDay">Due day</label>
-      <select id="billDueDay"></select>
-    </div>
-
-    <div>
-      <label for="billFrequency">Frequency</label>
-      <select id="billFrequency">
-        <option value="monthly">Monthly</option>
-        <option value="every_other_month">Every other month</option>
-        <option value="yearly">Yearly</option>
-      </select>
-    </div>
-
-    <div class="full-width">
-      <select id="startMonth" class="hide"></select>
-    </div>
+    <div><label for="billName">Bill name</label><input id="billName" list="billSuggestions" placeholder="Electric, Rent, Phone..." /><datalist id="billSuggestions"></datalist></div>
+    <div><label for="billAmount">Amount</label><input id="billAmount" type="number" min="0" step="0.01" placeholder="0.00" /></div>
+    <div><label for="billDueDay">Due day</label><select id="billDueDay"></select></div>
+    <div><label for="billFrequency">Frequency</label><select id="billFrequency"><option value="monthly">Monthly</option><option value="every_other_month">Every other month</option><option value="yearly">Yearly</option></select></div>
+    <div class="full-width"><select id="startMonth" class="hide"></select></div>
   </div>
-
-  <p class="small-note">
-    Monthly bills show every month. Every-other-month bills follow the month pattern you choose.
-    Yearly bills show once a year in the month you choose.
-  </p>
-
-  <div class="btn-row">
-    <button class="btn btn-primary" id="saveBillBtn" type="button">Save Bill</button>
-    <button class="btn" id="cancelEditBtn" type="button">Cancel</button>
-  </div>
+  <p class="small-note">Monthly bills show every month. Every-other-month bills follow the month pattern you choose. Yearly bills show once a year in the month you choose.</p>
+  <div class="btn-row"><button class="btn btn-primary" id="saveBillBtn" type="button">Save Bill</button><button class="btn" id="cancelEditBtn" type="button">Cancel</button></div>
 </section>
 
 <section class="card card-setup">
   <h2 class="section-title">Paycheck Setup</h2>
-
   <div class="form-grid">
-    <div>
-      <label for="paycheckAmount">Paycheck amount</label>
-      <input id="paycheckAmount" type="number" min="0" step="0.01" placeholder="0.00" />
-    </div>
-
-    <div>
-      <label for="cushionTarget">Cushion target</label>
-      <input id="cushionTarget" type="number" min="0" step="0.01" placeholder="400.00" />
-      <p class="small-note">(Amount you want left after bills.)</p>
-    </div>
-
-    <div>
-      <label for="payFrequency">Pay frequency</label>
-      <select id="payFrequency">
-        <option value="weekly">Weekly</option>
-        <option value="biweekly">Every 2 weeks</option>
-        <option value="semimonthly">1st and 15th</option>
-        <option value="monthly">Monthly</option>
-      </select>
-    </div>
-
-    <div>
-      <label for="nextPayDate">Next payday</label>
-      <input id="nextPayDate" type="date" />
-    </div>
+    <div><label for="paycheckAmount">Paycheck amount</label><input id="paycheckAmount" type="number" min="0" step="0.01" placeholder="0.00" /></div>
+    <div><label for="cushionTarget">Cushion target</label><input id="cushionTarget" type="number" min="0" step="0.01" placeholder="400.00" /><p class="small-note">(Amount you want left after bills.)</p></div>
+    <div><label for="payFrequency">Pay frequency</label><select id="payFrequency"><option value="weekly">Weekly</option><option value="biweekly">Every 2 weeks</option><option value="semimonthly">1st and 15th</option><option value="monthly">Monthly</option></select></div>
+    <div><label for="nextPayDate">Next payday</label><input id="nextPayDate" type="date" /></div>
   </div>
-
   <div class="setup-preview" id="setupPreview"></div>
-
-  <div class="btn-row">
-    <button class="btn btn-blue" id="saveSettingsBtn" type="button">Save Paycheck Setup</button>
-  </div>
+  <div class="btn-row"><button class="btn btn-blue" id="saveSettingsBtn" type="button">Save Paycheck Setup</button></div>
 </section>
 
 <section class="card card-backup">
   <h2 class="section-title">Backup</h2>
-  <p class="small-note">
-    Export saves your bills and paycheck setup to a file. Import restores them on this device.
-  </p>
-
-  <div class="btn-row">
-    <button class="btn btn-yellow" id="exportBtn" type="button">Export Backup</button>
-    <label class="btn btn-blue" for="importFile">Import Backup</label>
-    <input class="hide" id="importFile" type="file" accept="application/json,.json" />
-  </div>
-
-  <div class="backup-box">
-    <p class="small-note" id="backupStatus">No backup action yet.</p>
-  </div>
+  <p class="small-note">Export saves your bills and paycheck setup to a file. Import restores them on this device.</p>
+  <div class="btn-row"><button class="btn btn-yellow" id="exportBtn" type="button">Export Backup</button><label class="btn btn-blue" for="importFile">Import Backup</label><input class="hide" id="importFile" type="file" accept="application/json,.json" /></div>
+  <div class="backup-box"><p class="small-note" id="backupStatus">No backup action yet.</p></div>
 </section>
+</main>
 
-  </main>  <script>
-    const BILL_STORAGE_KEY = "billTracker.bills.v2";
-    const SETTINGS_STORAGE_KEY = "billTracker.settings.v2";
-    const PAYCHECK_COUNT = 6;
+<script>
+const BILL_STORAGE_KEY="billTracker.bills.v2", SETTINGS_STORAGE_KEY="billTracker.settings.v2", PAYCHECK_COUNT=6;
+const DEFAULT_BILLS=["Rent / Mortgage","Electric","Water","Garbage","Internet","Phone","Car Payment","Car Insurance","Car Registration","Health Insurance","Credit Card","Loan","Amazon Membership","Streaming","Storage","Gym","Subscription","Other"];
+const MONTH_NAMES=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const WEEKDAY_NAMES=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const els={todayLine:document.getElementById("todayLine"),calendarTitle:document.getElementById("calendarTitle"),calendarGrid:document.getElementById("calendarGrid"),selectedDayBox:document.getElementById("selectedDayBox"),prevMonthBtn:document.getElementById("prevMonthBtn"),nextMonthBtn:document.getElementById("nextMonthBtn"),paycheckArea:document.getElementById("paycheckArea"),cushionPill:document.getElementById("cushionPill"),billList:document.getElementById("billList"),billCountPill:document.getElementById("billCountPill"),billFormTitle:document.getElementById("billFormTitle"),billName:document.getElementById("billName"),billAmount:document.getElementById("billAmount"),billDueDay:document.getElementById("billDueDay"),billFrequency:document.getElementById("billFrequency"),startMonth:document.getElementById("startMonth"),billSuggestions:document.getElementById("billSuggestions"),saveBillBtn:document.getElementById("saveBillBtn"),cancelEditBtn:document.getElementById("cancelEditBtn"),paycheckAmount:document.getElementById("paycheckAmount"),cushionTarget:document.getElementById("cushionTarget"),payFrequency:document.getElementById("payFrequency"),nextPayDate:document.getElementById("nextPayDate"),setupPreview:document.getElementById("setupPreview"),saveSettingsBtn:document.getElementById("saveSettingsBtn"),exportBtn:document.getElementById("exportBtn"),importFile:document.getElementById("importFile"),backupStatus:document.getElementById("backupStatus")};
 
-    const DEFAULT_BILLS = [
-      "Rent / Mortgage",
-      "Electric",
-      "Water",
-      "Garbage",
-      "Internet",
-      "Phone",
-      "Car Payment",
-      "Car Insurance",
-      "Car Registration",
-      "Health Insurance",
-      "Credit Card",
-      "Loan",
-      "Amazon Membership",
-      "Streaming",
-      "Storage",
-      "Gym",
-      "Subscription",
-      "Other"
-    ];
+let today=startOfDay(new Date()), visibleMonth=new Date(today.getFullYear(),today.getMonth(),1), selectedDateKey=dateKey(today), editingBillId=null;
+let bills=loadBills(), settings=loadSettings();
 
-    const MONTH_NAMES = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
+function startOfDay(date){return new Date(date.getFullYear(),date.getMonth(),date.getDate())}
+function dateKey(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`}
+function dateFromKey(key){const[y,m,d]=key.split("-").map(Number);return new Date(y,m-1,d)}
+function formatDateInput(date){return dateKey(date)}
+function formatMoney(amount){let value=Number(amount)||0;if(Math.abs(value)<.005)value=0;return value.toLocaleString("en-US",{style:"currency",currency:"USD"})}
+function formatShortDate(date){return `${MONTH_NAMES[date.getMonth()].slice(0,3)} ${date.getDate()}`}
+function formatLongDate(date){return `${WEEKDAY_NAMES[date.getDay()]}, ${MONTH_NAMES[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`}
+function clampDay(year,monthIndex,day){return Math.min(Number(day),new Date(year,monthIndex+1,0).getDate())}
+function addDays(date,days){const next=new Date(date);next.setDate(next.getDate()+days);return startOfDay(next)}
+function addMonths(date,months){const next=new Date(date);next.setMonth(next.getMonth()+months);return startOfDay(next)}
+function makeId(){return window.crypto&&typeof window.crypto.randomUUID==="function"?window.crypto.randomUUID():`bill-${Date.now()}-${Math.random().toString(16).slice(2)}`}
+function parseMonthValue(value,fallback=today.getMonth()){if(value===undefined||value===null||value==="")return fallback;if(typeof value==="string"){const clean=value.trim().toLowerCase(),mi=MONTH_NAMES.findIndex(m=>m.toLowerCase()===clean),sm=MONTH_NAMES.findIndex(m=>m.slice(0,3).toLowerCase()===clean.slice(0,3));if(mi>=0)return mi;if(sm>=0&&Number.isNaN(Number(clean)))return sm}const n=Number(value);if(!Number.isFinite(n))return fallback;if(n>=0&&n<=11)return Math.floor(n);if(n>=1&&n<=12)return Math.floor(n)-1;return fallback}
+function loadBills(){try{const saved=JSON.parse(localStorage.getItem(BILL_STORAGE_KEY)||"[]");return Array.isArray(saved)?saved.map(normalizeBill).filter(Boolean):[]}catch(e){return[]}}
+function loadSettings(){const defaultNextPayday=getUpcomingFriday(today),defaults={paycheckAmount:"",cushionTarget:400,payFrequency:"biweekly",nextPayDate:formatDateInput(defaultNextPayday)};try{const saved=JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY)||"{}"),merged={...defaults,...saved};merged.paycheckAmount=merged.paycheckAmount??"";merged.cushionTarget=merged.cushionTarget??400;if(!["weekly","biweekly","semimonthly","monthly"].includes(merged.payFrequency))merged.payFrequency="biweekly";if(!merged.nextPayDate)merged.nextPayDate=formatDateInput(defaultNextPayday);return merged}catch(e){return defaults}}
+function saveBills(){localStorage.setItem(BILL_STORAGE_KEY,JSON.stringify(bills))}
+function saveSettings(){localStorage.setItem(SETTINGS_STORAGE_KEY,JSON.stringify(settings))}
+function normalizeBill(bill){if(!bill||!bill.name)return null;let frequency=String(bill.frequency??bill.billFrequency??bill.freq??bill.repeat??"monthly").toLowerCase().trim();if(["every other month","every-other-month","everyothermonth","bimonthly","bi-monthly"].includes(frequency))frequency="every_other_month";if(["annual","annually","year","once a year"].includes(frequency))frequency="yearly";if(!["monthly","every_other_month","yearly"].includes(frequency))frequency="monthly";let dueDay=bill.dueDay??bill.due_day??bill.day??bill.due??bill.billDueDay??bill.dueDate??bill.date;if(typeof dueDay==="string"&&dueDay.includes("-"))dueDay=dueDay.split("-").map(Number)[2];dueDay=Math.min(31,Math.max(1,Number(dueDay)||1));let startMonth=bill.startMonth??bill.start_month??bill.month??bill.dueMonth??today.getMonth();if(typeof bill.dueDate==="string"&&bill.dueDate.includes("-")){const p=bill.dueDate.split("-").map(Number);if(Number.isFinite(p[1]))startMonth=p[1]-1}startMonth=parseMonthValue(startMonth,today.getMonth());return{id:bill.id||makeId(),name:String(bill.name).trim(),amount:Number(bill.amount)||0,dueDay,frequency,startMonth}}
+function getUpcomingFriday(fromDate){const date=startOfDay(fromDate),day=date.getDay(),diff=(5-day+7)%7;return addDays(date,diff)}
+function getCushionTarget(){return Math.max(0,Number(settings.cushionTarget)||0)}
+function billOccursInMonth(bill,year,monthIndex){if(bill.frequency==="yearly")return Number(bill.startMonth)===monthIndex;if(bill.frequency==="every_other_month"){const difference=(monthIndex-Number(bill.startMonth)+12)%12;return difference%2===0}return true}
+function getBillDueDateInMonth(bill,year,monthIndex){return new Date(year,monthIndex,clampDay(year,monthIndex,bill.dueDay))}
+function getBillsForDate(date){const y=date.getFullYear(),m=date.getMonth(),d=date.getDate();return bills.filter(b=>billOccursInMonth(b,y,m)).filter(b=>clampDay(y,m,b.dueDay)===d).sort((a,b)=>a.name.localeCompare(b.name))}
+function getBillOccurrencesBetween(startDate,endDate){const start=startOfDay(startDate),end=startOfDay(endDate),results=[];let cursor=new Date(start.getFullYear(),start.getMonth(),1),endMonth=new Date(end.getFullYear(),end.getMonth(),1);while(cursor<=endMonth){const y=cursor.getFullYear(),m=cursor.getMonth();bills.forEach(b=>{if(!billOccursInMonth(b,y,m))return;const dueDate=getBillDueDateInMonth(b,y,m);if(dueDate>=start&&dueDate<end)results.push({...b,dueDate})});cursor=new Date(y,m+1,1)}return results.sort((a,b)=>a.dueDate-b.dueDate||a.name.localeCompare(b.name))}
 
-    const WEEKDAY_NAMES = [
-      "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
-    ];
+function getPayDatesForCalendar(year,monthIndex){const start=new Date(year,monthIndex,1),end=new Date(year,monthIndex+1,1),dates=[];if(settings.payFrequency==="semimonthly"){const first=new Date(year,monthIndex,1),fifteenth=new Date(year,monthIndex,15);if(first>=start&&first<end)dates.push(first);if(fifteenth>=start&&fifteenth<end)dates.push(fifteenth);return dates}let anchor=dateFromKey(settings.nextPayDate),stepDays=settings.payFrequency==="weekly"?7:14;if(settings.payFrequency==="monthly"){let cursor=new Date(anchor);while(cursor>=start)cursor=addMonths(cursor,-1);cursor=addMonths(cursor,1);while(cursor<end){if(cursor>=start)dates.push(cursor);cursor=addMonths(cursor,1)}return dates}while(anchor>start)anchor=addDays(anchor,-stepDays);while(anchor<end){if(anchor>=start)dates.push(anchor);anchor=addDays(anchor,stepDays)}return dates}
 
-    const els = {
-      todayLine: document.getElementById("todayLine"),
-      calendarTitle: document.getElementById("calendarTitle"),
-      calendarGrid: document.getElementById("calendarGrid"),
-      selectedDayBox: document.getElementById("selectedDayBox"),
-      prevMonthBtn: document.getElementById("prevMonthBtn"),
-      nextMonthBtn: document.getElementById("nextMonthBtn"),
-
-      paycheckArea: document.getElementById("paycheckArea"),
-      cushionPill: document.getElementById("cushionPill"),
-
-      billList: document.getElementById("billList"),
-      billCountPill: document.getElementById("billCountPill"),
-
-      billFormTitle: document.getElementById("billFormTitle"),
-      billName: document.getElementById("billName"),
-      billAmount: document.getElementById("billAmount"),
-      billDueDay: document.getElementById("billDueDay"),
-      billFrequency: document.getElementById("billFrequency"),
-      startMonth: document.getElementById("startMonth"),
-      billSuggestions: document.getElementById("billSuggestions"),
-      saveBillBtn: document.getElementById("saveBillBtn"),
-      cancelEditBtn: document.getElementById("cancelEditBtn"),
-
-      paycheckAmount: document.getElementById("paycheckAmount"),
-      cushionTarget: document.getElementById("cushionTarget"),
-      payFrequency: document.getElementById("payFrequency"),
-      nextPayDate: document.getElementById("nextPayDate"),
-      setupPreview: document.getElementById("setupPreview"),
-      saveSettingsBtn: document.getElementById("saveSettingsBtn"),
-
-      exportBtn: document.getElementById("exportBtn"),
-      importFile: document.getElementById("importFile"),
-      backupStatus: document.getElementById("backupStatus")
-    };
-
-    let today = startOfDay(new Date());
-    let visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    let selectedDateKey = dateKey(today);
-    let editingBillId = null;
-
-    let bills = loadBills();
-    let settings = loadSettings();
-
-    function startOfDay(date) {
-      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+/* UPDATED: The six-paycheck window now starts with the paycheck period
+   that contains today, rather than the next future payday. It rotates
+   automatically as the date changes. */
+function getNextPaychecks(count=PAYCHECK_COUNT){
+  const payAmount=Number(settings.paycheckAmount)||0,paychecks=[];
+  if(settings.payFrequency==="semimonthly"){
+    let cursor=new Date(today.getFullYear(),today.getMonth(),1);
+    while(paychecks.length<count){
+      const first=new Date(cursor.getFullYear(),cursor.getMonth(),1),fifteenth=new Date(cursor.getFullYear(),cursor.getMonth(),15);
+      [first,fifteenth].forEach(payDate=>{if(paychecks.length<count&&payDate>=today)paychecks.push({date:startOfDay(payDate),amount:payAmount})});
+      cursor=new Date(cursor.getFullYear(),cursor.getMonth()+1,1)
     }
-
-    function dateKey(date) {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      return `${y}-${m}-${d}`;
+    return buildPaycheckPeriods(paychecks)
+  }
+  if(settings.payFrequency==="monthly"){
+    let anchor=dateFromKey(settings.nextPayDate),anchorDay=anchor.getDate();
+    while(anchor<today){const nextMonth=anchor.getMonth()+1,nextYear=anchor.getFullYear()+Math.floor(nextMonth/12),normalizedMonth=nextMonth%12;anchor=new Date(nextYear,normalizedMonth,clampDay(nextYear,normalizedMonth,anchorDay))}
+    // Monthly pay periods retain the existing behavior: the most recent
+    // monthly payday on/before today is the current period.
+    if(anchor>today){
+      let prevMonth=anchor.getMonth()-1,prevYear=anchor.getFullYear()+Math.floor(prevMonth/12);
+      prevMonth=(prevMonth+12)%12;
+      anchor=new Date(prevYear,prevMonth,clampDay(prevYear,prevMonth,anchorDay));
     }
-
-    function dateFromKey(key) {
-      const [y, m, d] = key.split("-").map(Number);
-      return new Date(y, m - 1, d);
-    }
-
-    function formatDateInput(date) {
-      return dateKey(date);
-    }
-
-    function formatMoney(amount) {
-      let value = Number(amount) || 0;
-
-      if (Math.abs(value) < 0.005) {
-        value = 0;
-      }
-
-      return value.toLocaleString("en-US", {
-        style: "currency",
-        currency: "USD"
-      });
-    }
-
-    function formatShortDate(date) {
-      return `${MONTH_NAMES[date.getMonth()].slice(0, 3)} ${date.getDate()}`;
-    }
-
-    function formatLongDate(date) {
-      return `${WEEKDAY_NAMES[date.getDay()]}, ${MONTH_NAMES[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
-    }
-
-    function clampDay(year, monthIndex, day) {
-      const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-      return Math.min(Number(day), lastDay);
-    }
-
-    function addDays(date, days) {
-      const next = new Date(date);
-      next.setDate(next.getDate() + days);
-      return startOfDay(next);
-    }
-
-    function addMonths(date, months) {
-      const next = new Date(date);
-      next.setMonth(next.getMonth() + months);
-      return startOfDay(next);
-    }
-
-    function makeId() {
-      if (window.crypto && typeof window.crypto.randomUUID === "function") {
-        return window.crypto.randomUUID();
-      }
-
-      return `bill-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    }
-
-    function parseMonthValue(value, fallback = today.getMonth()) {
-      if (value === undefined || value === null || value === "") {
-        return fallback;
-      }
-
-      if (typeof value === "string") {
-        const clean = value.trim().toLowerCase();
-        const monthIndex = MONTH_NAMES.findIndex(month => month.toLowerCase() === clean);
-
-        if (monthIndex >= 0) {
-          return monthIndex;
-        }
-
-        const shortMonthIndex = MONTH_NAMES.findIndex(month => month.slice(0, 3).toLowerCase() === clean.slice(0, 3));
-
-        if (shortMonthIndex >= 0 && Number.isNaN(Number(clean))) {
-          return shortMonthIndex;
-        }
-      }
-
-      const numberValue = Number(value);
-
-      if (!Number.isFinite(numberValue)) {
-        return fallback;
-      }
-
-      if (numberValue >= 0 && numberValue <= 11) {
-        return Math.floor(numberValue);
-      }
-
-      if (numberValue >= 1 && numberValue <= 12) {
-        return Math.floor(numberValue) - 1;
-      }
-
-      return fallback;
-    }
-
-    function loadBills() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(BILL_STORAGE_KEY) || "[]");
-        return Array.isArray(saved) ? saved.map(normalizeBill).filter(Boolean) : [];
-      } catch (err) {
-        return [];
-      }
-    }
-
-    function loadSettings() {
-      const defaultNextPayday = getUpcomingFriday(today);
-
-      const defaults = {
-        paycheckAmount: "",
-        cushionTarget: 400,
-        payFrequency: "biweekly",
-        nextPayDate: formatDateInput(defaultNextPayday)
-      };
-
-      try {
-        const saved = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || "{}");
-        const merged = { ...defaults, ...saved };
-
-        merged.paycheckAmount = merged.paycheckAmount ?? "";
-        merged.cushionTarget = merged.cushionTarget ?? 400;
-
-        if (!["weekly", "biweekly", "semimonthly", "monthly"].includes(merged.payFrequency)) {
-          merged.payFrequency = "biweekly";
-        }
-
-        if (!merged.nextPayDate) {
-          merged.nextPayDate = formatDateInput(defaultNextPayday);
-        }
-
-        return merged;
-      } catch (err) {
-        return defaults;
-      }
-    }
-
-    function saveBills() {
-      localStorage.setItem(BILL_STORAGE_KEY, JSON.stringify(bills));
-    }
-
-    function saveSettings() {
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-    }
-
-    function normalizeBill(bill) {
-      if (!bill || !bill.name) return null;
-
-      const rawFrequency =
-        bill.frequency ??
-        bill.billFrequency ??
-        bill.freq ??
-        bill.repeat ??
-        "monthly";
-
-      let frequency = String(rawFrequency).toLowerCase().trim();
-
-      if (
-        frequency === "every other month" ||
-        frequency === "every-other-month" ||
-        frequency === "everyothermonth" ||
-        frequency === "bimonthly" ||
-        frequency === "bi-monthly"
-      ) {
-        frequency = "every_other_month";
-      }
-
-      if (
-        frequency === "annual" ||
-        frequency === "annually" ||
-        frequency === "year" ||
-        frequency === "once a year"
-      ) {
-        frequency = "yearly";
-      }
-
-      if (!["monthly", "every_other_month", "yearly"].includes(frequency)) {
-        frequency = "monthly";
-      }
-
-      let dueDay =
-        bill.dueDay ??
-        bill.due_day ??
-        bill.day ??
-        bill.due ??
-        bill.billDueDay ??
-        bill.dueDate ??
-        bill.date;
-
-      if (typeof dueDay === "string" && dueDay.includes("-")) {
-        const dateParts = dueDay.split("-").map(Number);
-        dueDay = dateParts[2];
-      }
-
-      dueDay = Math.min(31, Math.max(1, Number(dueDay) || 1));
-
-      let startMonth =
-        bill.startMonth ??
-        bill.start_month ??
-        bill.month ??
-        bill.dueMonth ??
-        today.getMonth();
-
-      if (typeof bill.dueDate === "string" && bill.dueDate.includes("-")) {
-        const dateParts = bill.dueDate.split("-").map(Number);
-
-        if (Number.isFinite(dateParts[1])) {
-          startMonth = dateParts[1] - 1;
-        }
-      }
-
-      startMonth = parseMonthValue(startMonth, today.getMonth());
-
-      return {
-        id: bill.id || makeId(),
-        name: String(bill.name).trim(),
-        amount: Number(bill.amount) || 0,
-        dueDay,
-        frequency,
-        startMonth
-      };
-    }
-
-    function getUpcomingFriday(fromDate) {
-      const date = startOfDay(fromDate);
-      const day = date.getDay();
-      const diff = (5 - day + 7) % 7;
-      return addDays(date, diff);
-    }
-
-    function getCushionTarget() {
-      return Math.max(0, Number(settings.cushionTarget) || 0);
-    }
-
-    function billOccursInMonth(bill, year, monthIndex) {
-      if (bill.frequency === "yearly") {
-        return Number(bill.startMonth) === monthIndex;
-      }
-
-      if (bill.frequency === "every_other_month") {
-        const difference = (monthIndex - Number(bill.startMonth) + 12) % 12;
-        return difference % 2 === 0;
-      }
-
-      return true;
-    }
-
-    function getBillDueDateInMonth(bill, year, monthIndex) {
-      const day = clampDay(year, monthIndex, bill.dueDay);
-      return new Date(year, monthIndex, day);
-    }
-
-    function getBillsForDate(date) {
-      const year = date.getFullYear();
-      const monthIndex = date.getMonth();
-      const day = date.getDate();
-
-      return bills
-        .filter(bill => billOccursInMonth(bill, year, monthIndex))
-        .filter(bill => clampDay(year, monthIndex, bill.dueDay) === day)
-        .sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    function getBillOccurrencesBetween(startDate, endDate) {
-      const start = startOfDay(startDate);
-      const end = startOfDay(endDate);
-      const results = [];
-
-      let cursor = new Date(start.getFullYear(), start.getMonth(), 1);
-      const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
-
-      while (cursor <= endMonth) {
-        const year = cursor.getFullYear();
-        const monthIndex = cursor.getMonth();
-
-        bills.forEach(bill => {
-          if (!billOccursInMonth(bill, year, monthIndex)) return;
-
-          const dueDate = getBillDueDateInMonth(bill, year, monthIndex);
-
-          if (dueDate >= start && dueDate < end) {
-            results.push({
-              ...bill,
-              dueDate
-            });
-          }
-        });
-
-        cursor = new Date(year, monthIndex + 1, 1);
-      }
-
-      return results.sort((a, b) => a.dueDate - b.dueDate || a.name.localeCompare(b.name));
-    }
-
-    function getPayDatesForCalendar(year, monthIndex) {
-      const start = new Date(year, monthIndex, 1);
-      const end = new Date(year, monthIndex + 1, 1);
-      const dates = [];
-
-      if (settings.payFrequency === "semimonthly") {
-        const first = new Date(year, monthIndex, 1);
-        const fifteenth = new Date(year, monthIndex, 15);
-
-        if (first >= start && first < end) dates.push(first);
-        if (fifteenth >= start && fifteenth < end) dates.push(fifteenth);
-
-        return dates;
-      }
-
-      let anchor = dateFromKey(settings.nextPayDate);
-      let stepDays = 14;
-
-      if (settings.payFrequency === "weekly") stepDays = 7;
-
-      if (settings.payFrequency === "monthly") {
-        let cursor = new Date(anchor);
-
-        while (cursor >= start) {
-          cursor = addMonths(cursor, -1);
-        }
-
-        cursor = addMonths(cursor, 1);
-
-        while (cursor < end) {
-          if (cursor >= start) dates.push(cursor);
-          cursor = addMonths(cursor, 1);
-        }
-
-        return dates;
-      }
-
-      while (anchor > start) {
-        anchor = addDays(anchor, -stepDays);
-      }
-
-      while (anchor < end) {
-        if (anchor >= start) dates.push(anchor);
-        anchor = addDays(anchor, stepDays);
-      }
-
-      return dates;
-    }
-
-    function getNextPaychecks(count = PAYCHECK_COUNT) {
-      const paychecks = [];
-      const payAmount = Number(settings.paycheckAmount) || 0;
-
-      // The first paycheck shown is the paycheck period we are currently in:
-      // the most recent payday on or before today. The remaining entries are
-      // the following paychecks.
-      if (settings.payFrequency === "semimonthly") {
-        let year = today.getFullYear();
-        let month = today.getMonth();
-
-        while (paychecks.length < count) {
-          const first = new Date(year, month, 1);
-          const fifteenth = new Date(year, month, 15);
-          const candidates = [first, fifteenth].filter(payDate => payDate <= today);
-
-          candidates.sort((a, b) => b - a);
-
-          for (const payDate of candidates) {
-            if (paychecks.length < count) {
-              paychecks.push({
-                date: startOfDay(payDate),
-                amount: payAmount
-              });
-            }
-          }
-
-          month -= 1;
-          if (month < 0) {
-            month = 11;
-            year -= 1;
-          }
-        }
-
-        paychecks.reverse();
-
-        // We need the current paycheck first, then future paychecks.
-        const currentAndFuture = [
-          ...paychecks.filter(check => check.date >= today),
-          ...paychecks.filter(check => check.date < today)
-        ];
-
-        // Rebuild cleanly from the current period forward.
-        const currentPayDate = getMostRecentSemimonthlyPayDate(today);
-        paychecks.length = 0;
-        paychecks.push({ date: currentPayDate, amount: payAmount });
-
-        let cursor = currentPayDate;
-        while (paychecks.length < count) {
-          cursor = cursor.getDate() === 1
-            ? new Date(cursor.getFullYear(), cursor.getMonth(), 15)
-            : new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
-
-          paychecks.push({
-            date: startOfDay(cursor),
-            amount: payAmount
-          });
-        }
-
-        return buildPaycheckPeriods(paychecks);
-      }
-
-      if (settings.payFrequency === "monthly") {
-        const configured = dateFromKey(settings.nextPayDate);
-        const anchorDay = configured.getDate();
-        let anchor = new Date(today.getFullYear(), today.getMonth(), clampDay(today.getFullYear(), today.getMonth(), anchorDay));
-
-        // If this month's payday has not happened yet, the current paycheck
-        // period began on the matching day in the previous month.
-        if (anchor > today) {
-          anchor = new Date(today.getFullYear(), today.getMonth() - 1, clampDay(today.getFullYear(), today.getMonth() - 1, anchorDay));
-        }
-
-        for (let i = 0; i < count; i++) {
-          const month = anchor.getMonth() + i;
-          const year = anchor.getFullYear() + Math.floor(month / 12);
-          const normalizedMonth = month % 12;
-
-          paychecks.push({
-            date: new Date(year, normalizedMonth, clampDay(year, normalizedMonth, anchorDay)),
-            amount: payAmount
-          });
-        }
-
-        return buildPaycheckPeriods(paychecks);
-      }
-
-      let anchor = dateFromKey(settings.nextPayDate);
-      const stepDays = settings.payFrequency === "weekly" ? 7 : 14;
-
-      // Walk backward from the configured payday until we reach the most
-      // recent payday on or before today. That is the current paycheck period.
-      while (anchor > today) {
-        anchor = addDays(anchor, -stepDays);
-      }
-
-      for (let i = 0; i < count; i++) {
-        paychecks.push({
-          date: addDays(anchor, i * stepDays),
-          amount: payAmount
-        });
-      }
-
-      return buildPaycheckPeriods(paychecks);
-    }
-
-    function getMostRecentSemimonthlyPayDate(date) {
-      const current = startOfDay(date);
-
-      if (current.getDate() >= 15) {
-        return new Date(current.getFullYear(), current.getMonth(), 15);
-      }
-
-      return new Date(current.getFullYear(), current.getMonth() - 1, 15);
-    }
-
-    function buildPaycheckPeriods(paychecks) {
-      const withBills = paychecks.map((check, index) => {
-        const nextDate = paychecks[index + 1]?.date || estimateNextPayDate(check.date);
-        const periodBills = getBillOccurrencesBetween(check.date, nextDate);
-        const billTotal = periodBills.reduce((sum, bill) => sum + Number(bill.amount || 0), 0);
-
-        return {
-          ...check,
-          nextDate,
-          bills: periodBills,
-          billTotal,
-          cushionFromPrevious: 0,
-          holdForNext: 0,
-          warning: 0
-        };
-      });
-
-      return applyCushionPlan(withBills);
-    }
-
-    function estimateNextPayDate(date) {
-      if (settings.payFrequency === "weekly") return addDays(date, 7);
-      if (settings.payFrequency === "biweekly") return addDays(date, 14);
-
-      if (settings.payFrequency === "monthly") {
-        return addMonths(date, 1);
-      }
-
-      if (date.getDate() === 1) {
-        return new Date(date.getFullYear(), date.getMonth(), 15);
-      }
-
-      return new Date(date.getFullYear(), date.getMonth() + 1, 1);
-    }
-
-    function applyCushionPlan(checks) {
-      const cushionTarget = getCushionTarget();
-
-      checks.forEach(check => {
-        check.cushionFromPrevious = 0;
-        check.holdForNext = 0;
-        check.warning = 0;
-        check.leftAfterBills = (Number(check.amount) || 0) - check.billTotal;
-        check.finalLeft = check.leftAfterBills;
-      });
-
-      for (let i = checks.length - 1; i >= 0; i--) {
-        const check = checks[i];
-        const amount = Number(check.amount) || 0;
-
-        const leftAfterBillsAndSavingForNext =
-          amount - check.billTotal - check.holdForNext;
-
-        const amountNeededFromPrevious =
-          Math.max(0, cushionTarget - leftAfterBillsAndSavingForNext);
-
-        if (amountNeededFromPrevious > 0) {
-          if (i > 0) {
-            check.cushionFromPrevious = amountNeededFromPrevious;
-            checks[i - 1].holdForNext += amountNeededFromPrevious;
-          } else {
-            check.warning = amountNeededFromPrevious;
-          }
-        }
-      }
-
-      checks.forEach(check => {
-        check.finalLeft =
-          (Number(check.amount) || 0)
-          - check.billTotal
-          + check.cushionFromPrevious
-          - check.holdForNext;
-      });
-
-      return checks;
-    }
-
-    function render() {
-      today = startOfDay(new Date());
-
-      els.todayLine.textContent = formatLongDate(today);
-      els.cushionPill.textContent = `Cushion: ${formatMoney(getCushionTarget())}`;
-
-      renderCalendar();
-      renderPaychecks();
-      renderBills();
-      renderSelectedDay();
-      renderSetupPreview();
-    }
-
-    function renderCalendar() {
-      const year = visibleMonth.getFullYear();
-      const monthIndex = visibleMonth.getMonth();
-      const firstDay = new Date(year, monthIndex, 1);
-      const lastDay = new Date(year, monthIndex + 1, 0);
-      const payDates = getPayDatesForCalendar(year, monthIndex).map(dateKey);
-
-      els.calendarTitle.textContent = `${MONTH_NAMES[monthIndex]} ${year}`;
-      els.calendarGrid.innerHTML = "";
-
-      for (let i = 0; i < firstDay.getDay(); i++) {
-        const blank = document.createElement("div");
-        blank.className = "day empty";
-        els.calendarGrid.appendChild(blank);
-      }
-
-      for (let day = 1; day <= lastDay.getDate(); day++) {
-        const date = new Date(year, monthIndex, day);
-        const key = dateKey(date);
-        const dayBills = getBillsForDate(date);
-        const isPayday = payDates.includes(key);
-
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "day";
-        if (key === dateKey(today)) button.classList.add("today");
-        if (key === selectedDateKey) button.classList.add("selected");
-
-        button.innerHTML = `
-          <span class="day-number">${day}</span>
-          <span class="dots">
-            ${isPayday ? `<span class="dot pay"></span>` : ""}
-            ${dayBills.map(() => `<span class="dot bill"></span>`).join("")}
-          </span>
-        `;
-
-        button.addEventListener("click", () => {
-          selectedDateKey = key;
-          renderCalendar();
-          renderSelectedDay();
-        });
-
-        els.calendarGrid.appendChild(button);
-      }
-    }
-
-    function renderSelectedDay() {
-      const date = dateFromKey(selectedDateKey);
-      const dayBills = getBillsForDate(date);
-      const nextChecks = getNextPaychecks(PAYCHECK_COUNT);
-      const selectedCheck = nextChecks.find(check => dateKey(check.date) === selectedDateKey);
-      const calendarPayDates = getPayDatesForCalendar(date.getFullYear(), date.getMonth()).map(dateKey);
-      const isPayday = calendarPayDates.includes(selectedDateKey);
-
-      let html = `<h3>${formatLongDate(date)}</h3>`;
-
-      if (isPayday) {
-        const check = selectedCheck || buildBasicCalendarCheck(date);
-        html += `<p class="small-note"><strong>Payday.</strong> Pay these bills from this paycheck:</p>`;
-
-        if (check.bills.length) {
-          html += `<ul class="mini-list">`;
-
-          check.bills.forEach(bill => {
-            html += `
-              <li>
-                <span>${formatShortDate(bill.dueDate)}</span>
-                <span>${escapeHtml(bill.name)}</span>
-                <strong>${formatMoney(bill.amount)}</strong>
-              </li>
-            `;
-          });
-
-          html += `</ul>`;
-        } else {
-          html += `<p class="small-note">No bills are assigned to this paycheck period.</p>`;
-        }
-      } else if (dayBills.length) {
-        html += `<ul class="mini-list">`;
-
-        dayBills.forEach(bill => {
-          html += `
-            <li>
-              <span>Due</span>
-              <span>${escapeHtml(bill.name)}</span>
-              <strong>${formatMoney(bill.amount)}</strong>
-            </li>
-          `;
-        });
-
-        html += `</ul>`;
-      } else {
-        html += `<p class="small-note">No bills or payday events on this day.</p>`;
-      }
-
-      els.selectedDayBox.innerHTML = html;
-    }
-
-    function buildBasicCalendarCheck(payDate) {
-      const nextDate = estimateNextPayDate(payDate);
-      const periodBills = getBillOccurrencesBetween(payDate, nextDate);
-
-      return {
-        date: payDate,
-        nextDate,
-        bills: periodBills,
-        billTotal: periodBills.reduce((sum, bill) => sum + Number(bill.amount || 0), 0)
-      };
-    }
-
-    function renderPaychecks() {
-      const checks = getNextPaychecks(PAYCHECK_COUNT);
-
-      if (!checks.length) {
-        els.paycheckArea.innerHTML = `<div class="empty-state">Set up your paycheck information first.</div>`;
-        return;
-      }
-
-      els.paycheckArea.innerHTML = checks.map((check, index) => {
-        let billHtml = "";
-
-        if (check.bills.length) {
-          billHtml += `<ul class="bill-lines">`;
-
-          check.bills.forEach(bill => {
-            billHtml += `
-              <li>
-                <span class="bill-date-tag">${formatShortDate(bill.dueDate)}</span>
-                <span>${escapeHtml(bill.name)}</span>
-                <strong>${formatMoney(bill.amount)}</strong>
-              </li>
-            `;
-          });
-
-          if (check.cushionFromPrevious > 0) {
-            billHtml += `
-              <li class="cushion-line">
-                <span>Use</span>
-                <span>Cushion</span>
-                <strong>+${formatMoney(check.cushionFromPrevious)}</strong>
-              </li>
-            `;
-          }
-
-          if (check.holdForNext > 0) {
-            billHtml += `
-              <li class="cushion-line">
-                <span>Save</span>
-                <span>Cushion</span>
-                <strong>-${formatMoney(check.holdForNext)}</strong>
-              </li>
-            `;
-          }
-
-          if (check.warning) {
-            billHtml += `
-              <li class="cushion-line">
-                <span>Short</span>
-                <span>Cushion</span>
-                <strong>-${formatMoney(check.warning)}</strong>
-              </li>
-            `;
-          }
-
-          billHtml += `</ul>`;
-        } else {
-          billHtml = `<p class="small-note">No bills are assigned to this paycheck period.</p>`;
-
-          if (check.holdForNext > 0 || check.cushionFromPrevious > 0 || check.warning) {
-            billHtml += `<ul class="bill-lines">`;
-
-            if (check.cushionFromPrevious > 0) {
-              billHtml += `
-                <li class="cushion-line">
-                  <span>Use</span>
-                  <span>Cushion</span>
-                  <strong>+${formatMoney(check.cushionFromPrevious)}</strong>
-                </li>
-              `;
-            }
-
-            if (check.holdForNext > 0) {
-              billHtml += `
-                <li class="cushion-line">
-                  <span>Save</span>
-                  <span>Cushion</span>
-                  <strong>-${formatMoney(check.holdForNext)}</strong>
-                </li>
-              `;
-            }
-
-            if (check.warning) {
-              billHtml += `
-                <li class="cushion-line">
-                  <span>Short</span>
-                  <span>Cushion</span>
-                  <strong>-${formatMoney(check.warning)}</strong>
-                </li>
-              `;
-            }
-
-            billHtml += `</ul>`;
-          }
-        }
-
-        const warningHtml = check.warning
-          ? `<div class="warning">This first visible paycheck is short ${formatMoney(check.warning)} from the cushion target.</div>`
-          : "";
-
-        const finalClass = check.finalLeft < 0 ? "money-out" : "money-left";
-
-        return `
-          <article class="paycheck-card">
-            <div class="paycheck-top">
-              <div>
-                <h3>Paycheck ${index + 1}</h3>
-                <p>${formatLongDate(check.date)} to ${formatShortDate(addDays(check.nextDate, -1))}</p>
-              </div>
-              <span class="pill">${formatMoney(check.amount || 0)}</span>
-            </div>
-
-            ${billHtml}
-            ${warningHtml}
-
-            <div class="summary-row">
-              <div class="summary-box">
-                <span>Bills from this check</span>
-                <strong class="money-out">${formatMoney(check.billTotal)}</strong>
-              </div>
-              <div class="summary-box">
-                <span>${check.amount ? "Left after bills and cushion" : "Paycheck amount"}</span>
-                <strong class="${finalClass}">${formatMoney(check.amount ? check.finalLeft : 0)}</strong>
-              </div>
-            </div>
-          </article>
-        `;
-      }).join("");
-    }
-
-    function renderBills() {
-      const sorted = [...bills].sort((a, b) => {
-        if (a.dueDay !== b.dueDay) return a.dueDay - b.dueDay;
-        return a.name.localeCompare(b.name);
-      });
-
-      els.billCountPill.textContent = `${bills.length} ${bills.length === 1 ? "bill" : "bills"}`;
-
-      if (!sorted.length) {
-        els.billList.innerHTML = `<div class="empty-state">No bills yet. Add your first bill below.</div>`;
-        return;
-      }
-
-      els.billList.innerHTML = `
-        <div class="bill-list">
-          ${sorted.map(bill => `
-            <article class="bill-item">
-              <div>
-                <h3>${escapeHtml(bill.name)} — ${formatMoney(bill.amount)}</h3>
-                <p>Due day ${bill.dueDay} • ${getFrequencyLabel(bill)}</p>
-              </div>
-              <div class="bill-actions">
-                <button class="btn btn-small btn-blue" type="button" data-edit="${bill.id}">Edit</button>
-                <button class="btn btn-small btn-danger" type="button" data-delete="${bill.id}">Delete</button>
-              </div>
-            </article>
-          `).join("")}
-        </div>
-      `;
-
-      els.billList.querySelectorAll("[data-edit]").forEach(button => {
-        button.addEventListener("click", () => startEditBill(button.dataset.edit));
-      });
-
-      els.billList.querySelectorAll("[data-delete]").forEach(button => {
-        button.addEventListener("click", () => deleteBill(button.dataset.delete));
-      });
-    }
-
-    function getFrequencyLabel(bill) {
-      if (bill.frequency === "yearly") {
-        return `Yearly in ${MONTH_NAMES[Number(bill.startMonth)]}`;
-      }
-
-      if (bill.frequency === "every_other_month") {
-        return `Every other month from ${MONTH_NAMES[Number(bill.startMonth)]}`;
-      }
-
-      return "Monthly";
-    }
-
-    function renderSetupPreview() {
-      const amount = Number(settings.paycheckAmount) || 0;
-      const cushion = getCushionTarget();
-      const nextDate = settings.nextPayDate ? formatLongDate(dateFromKey(settings.nextPayDate)) : "Not set";
-      const frequencyLabel = {
-        weekly: "Weekly",
-        biweekly: "Every 2 weeks",
-        semimonthly: "1st and 15th",
-        monthly: "Monthly"
-      }[settings.payFrequency] || "Every 2 weeks";
-
-      els.setupPreview.innerHTML = `
-        <strong>Current setup:</strong><br>
-        Paycheck: ${formatMoney(amount)} • Cushion target: ${formatMoney(cushion)}<br>
-        Frequency: ${frequencyLabel} • Next payday: ${nextDate}
-      `;
-    }
-
-    function fillFormOptions() {
-      for (let day = 1; day <= 31; day++) {
-        const option = document.createElement("option");
-        option.value = day;
-        option.textContent = day;
-        els.billDueDay.appendChild(option);
-      }
-
-      DEFAULT_BILLS.forEach(name => {
-        const option = document.createElement("option");
-        option.value = name;
-        els.billSuggestions.appendChild(option);
-      });
-
-      setStartMonthOptions("every_other_month", today.getMonth());
-    }
-
-    function setStartMonthOptions(mode, selectedValue) {
-      const currentValue = selectedValue ?? els.startMonth.value ?? today.getMonth();
-      els.startMonth.innerHTML = "";
-
-      MONTH_NAMES.forEach((monthName, index) => {
-        const option = document.createElement("option");
-        option.value = index;
-
-        if (mode === "yearly") {
-          option.textContent = `Yearly due in ${monthName}`;
-        } else {
-          option.textContent = `Every other month starting in ${monthName}`;
-        }
-
-        els.startMonth.appendChild(option);
-      });
-
-      els.startMonth.value = String(currentValue);
-    }
-
-    function updateFrequencyMonthPicker(selectedValue) {
-      const frequency = els.billFrequency.value;
-
-      if (frequency === "every_other_month" || frequency === "yearly") {
-        setStartMonthOptions(frequency, selectedValue);
-        els.startMonth.classList.remove("hide");
-      } else {
-        els.startMonth.classList.add("hide");
-      }
-    }
-
-    function fillSettingsForm() {
-      els.paycheckAmount.value = settings.paycheckAmount || "";
-      els.cushionTarget.value = settings.cushionTarget ?? 400;
-      els.payFrequency.value = settings.payFrequency;
-      els.nextPayDate.value = settings.nextPayDate;
-    }
-
-    function saveBillFromForm() {
-      const name = els.billName.value.trim();
-      const amount = Number(els.billAmount.value);
-      const dueDay = Number(els.billDueDay.value);
-      const frequency = els.billFrequency.value;
-      const startMonth = Number(els.startMonth.value || today.getMonth());
-
-      if (!name) {
-        alert("Please enter a bill name.");
-        return;
-      }
-
-      if (!Number.isFinite(amount) || amount < 0) {
-        alert("Please enter a valid bill amount.");
-        return;
-      }
-
-      const bill = normalizeBill({
-        id: editingBillId || makeId(),
-        name,
-        amount,
-        dueDay,
-        frequency,
-        startMonth
-      });
-
-      if (editingBillId) {
-        bills = bills.map(existing => existing.id === editingBillId ? bill : existing);
-      } else {
-        bills.push(bill);
-      }
-
-      saveBills();
-      clearBillForm();
-      render();
-    }
-
-    function startEditBill(id) {
-      const bill = bills.find(item => item.id === id);
-      if (!bill) return;
-
-      editingBillId = id;
-      els.billFormTitle.textContent = "Edit Bill";
-      els.billName.value = bill.name;
-      els.billAmount.value = bill.amount;
-      els.billDueDay.value = bill.dueDay;
-      els.billFrequency.value = bill.frequency;
-      updateFrequencyMonthPicker(bill.startMonth);
-      els.startMonth.value = String(bill.startMonth);
-
-      document.getElementById("addBillSection").scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-      });
-    }
-
-    function deleteBill(id) {
-      const bill = bills.find(item => item.id === id);
-      if (!bill) return;
-
-      if (!confirm(`Delete ${bill.name}?`)) return;
-
-      bills = bills.filter(item => item.id !== id);
-      saveBills();
-
-      if (editingBillId === id) {
-        clearBillForm();
-      }
-
-      render();
-    }
-
-    function clearBillForm() {
-      editingBillId = null;
-      els.billFormTitle.textContent = "Add Bill";
-      els.billName.value = "";
-      els.billAmount.value = "";
-      els.billDueDay.value = "1";
-      els.billFrequency.value = "monthly";
-      updateFrequencyMonthPicker();
-    }
-
-    function saveSettingsFromForm() {
-      settings = {
-        paycheckAmount: els.paycheckAmount.value,
-        cushionTarget: Number(els.cushionTarget.value) || 0,
-        payFrequency: els.payFrequency.value,
-        nextPayDate: els.nextPayDate.value || formatDateInput(today)
-      };
-
-      saveSettings();
-      render();
-
-      els.backupStatus.textContent = "Paycheck setup saved.";
-    }
-
-    function exportBackup() {
-      const cleanBills = bills.map(bill => ({
-        id: bill.id,
-        name: bill.name,
-        amount: Number(bill.amount) || 0,
-        dueDay: Number(bill.dueDay) || 1,
-        frequency: bill.frequency || "monthly",
-        startMonth: parseMonthValue(bill.startMonth, today.getMonth())
-      }));
-
-      const backup = {
-        version: 14,
-        exportedAt: new Date().toISOString(),
-        bills: cleanBills,
-        settings: {
-          paycheckAmount: settings.paycheckAmount ?? "",
-          cushionTarget: settings.cushionTarget ?? 400,
-          payFrequency: settings.payFrequency ?? "biweekly",
-          nextPayDate: settings.nextPayDate ?? formatDateInput(today)
-        }
-      };
-
-      const blob = new Blob([JSON.stringify(backup, null, 2)], {
-        type: "application/json"
-      });
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `my-bills-backup-${dateKey(today)}.json`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-
-      els.backupStatus.textContent = "Backup exported with due days and frequencies saved.";
-    }
-
-    function importBackup(file) {
-      if (!file) return;
-
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        try {
-          const data = JSON.parse(reader.result);
-
-          const importedBills =
-            data.bills ||
-            data.billData ||
-            data.items ||
-            data.savedBills ||
-            [];
-
-          if (!Array.isArray(importedBills)) {
-            throw new Error("Backup does not contain bills.");
-          }
-
-          bills = importedBills.map(normalizeBill).filter(Boolean);
-
-          settings = {
-            ...loadSettings(),
-            ...(data.settings || {})
-          };
-
-          settings.paycheckAmount = settings.paycheckAmount ?? "";
-          settings.cushionTarget = settings.cushionTarget ?? 400;
-          settings.payFrequency = settings.payFrequency ?? "biweekly";
-          settings.nextPayDate = settings.nextPayDate ?? formatDateInput(today);
-
-          saveBills();
-          saveSettings();
-          fillSettingsForm();
-          clearBillForm();
-          render();
-
-          els.backupStatus.textContent = "Backup imported with due days and frequencies restored.";
-          els.importFile.value = "";
-        } catch (err) {
-          els.backupStatus.textContent = "Could not import that backup file.";
-          alert("Could not import that backup file.");
-        }
-      };
-
-      reader.readAsText(file);
-    }
-
-    function escapeHtml(value) {
-      return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    function checkForNewDay() {
-      const current = startOfDay(new Date());
-
-      if (dateKey(current) !== dateKey(today)) {
-        today = current;
-        selectedDateKey = dateKey(today);
-        visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        render();
-      }
-    }
-
-    els.prevMonthBtn.addEventListener("click", () => {
-      visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
-      renderCalendar();
-      renderSelectedDay();
-    });
-
-    els.nextMonthBtn.addEventListener("click", () => {
-      visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
-      renderCalendar();
-      renderSelectedDay();
-    });
-
-    els.billFrequency.addEventListener("change", () => {
-      updateFrequencyMonthPicker();
-    });
-
-    els.saveBillBtn.addEventListener("click", saveBillFromForm);
-    els.cancelEditBtn.addEventListener("click", clearBillForm);
-    els.saveSettingsBtn.addEventListener("click", saveSettingsFromForm);
-    els.exportBtn.addEventListener("click", exportBackup);
-
-    els.importFile.addEventListener("change", event => {
-      importBackup(event.target.files[0]);
-    });
-
-    window.addEventListener("focus", checkForNewDay);
-
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) checkForNewDay();
-    });
-
-    setInterval(checkForNewDay, 60 * 60 * 1000);
-
-    fillFormOptions();
-    fillSettingsForm();
-    clearBillForm();
-    render();
-
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js").catch(() => {});
-      });
-    }
-  </script></body>
+    for(let i=0;i<count;i++){const month=anchor.getMonth()+i,year=anchor.getFullYear()+Math.floor(month/12),normalizedMonth=month%12;paychecks.push({date:new Date(year,normalizedMonth,clampDay(year,normalizedMonth,anchorDay)),amount:payAmount})}
+    return buildPaycheckPeriods(paychecks)
+  }
+  let anchor=dateFromKey(settings.nextPayDate),stepDays=settings.payFrequency==="weekly"?7:14;
+  // Find the most recent payday on or before today.
+  // This makes the paycheck period containing today Paycheck #1.
+  while(addDays(anchor,stepDays)<=today) anchor=addDays(anchor,stepDays);
+  while(anchor>today) anchor=addDays(anchor,-stepDays);
+  for(let i=0;i<count;i++)paychecks.push({date:addDays(anchor,i*stepDays),amount:payAmount});
+  return buildPaycheckPeriods(paychecks)
+}
+
+function buildPaycheckPeriods(paychecks){const withBills=paychecks.map((check,index)=>{const nextDate=paychecks[index+1]?.date||estimateNextPayDate(check.date),periodBills=getBillOccurrencesBetween(check.date,nextDate),billTotal=periodBills.reduce((sum,b)=>sum+Number(b.amount||0),0);return{...check,nextDate,bills:periodBills,billTotal,cushionFromPrevious:0,holdForNext:0,warning:0}});return applyCushionPlan(withBills)}
+function estimateNextPayDate(date){if(settings.payFrequency==="weekly")return addDays(date,7);if(settings.payFrequency==="biweekly")return addDays(date,14);if(settings.payFrequency==="monthly")return addMonths(date,1);if(date.getDate()===1)return new Date(date.getFullYear(),date.getMonth(),15);return new Date(date.getFullYear(),date.getMonth()+1,1)}
+function applyCushionPlan(checks){const cushionTarget=getCushionTarget();checks.forEach(c=>{c.cushionFromPrevious=0;c.holdForNext=0;c.warning=0;c.leftAfterBills=(Number(c.amount)||0)-c.billTotal;c.finalLeft=c.leftAfterBills});for(let i=checks.length-1;i>=0;i--){const c=checks[i],amount=Number(c.amount)||0,leftAfterBillsAndSavingForNext=amount-c.billTotal-c.holdForNext,amountNeededFromPrevious=Math.max(0,cushionFromPreviousNeeded=cushionTarget-leftAfterBillsAndSavingForNext);if(amountNeededFromPrevious>0){if(i>0){c.cushionFromPrevious=amountNeededFromPrevious;checks[i-1].holdForNext+=amountNeededFromPrevious}else c.warning=amountNeededFromPrevious}}checks.forEach(c=>c.finalLeft=(Number(c.amount)||0)-c.billTotal+c.cushionFromPrevious-c.holdForNext);return checks}
+
+function render(){today=startOfDay(new Date());els.todayLine.textContent=formatLongDate(today);els.cushionPill.textContent=`Cushion: ${formatMoney(getCushionTarget())}`;renderCalendar();renderPaychecks();renderBills();renderSelectedDay();renderSetupPreview()}
+function renderCalendar(){const year=visibleMonth.getFullYear(),monthIndex=visibleMonth.getMonth(),firstDay=new Date(year,monthIndex,1),lastDay=new Date(year,monthIndex+1,0),payDates=getPayDatesForCalendar(year,monthIndex).map(dateKey);els.calendarTitle.textContent=`${MONTH_NAMES[monthIndex]} ${year}`;els.calendarGrid.innerHTML="";for(let i=0;i<firstDay.getDay();i++){const blank=document.createElement("div");blank.className="day empty";els.calendarGrid.appendChild(blank)}for(let day=1;day<=lastDay.getDate();day++){const date=new Date(year,monthIndex,day),key=dateKey(date),dayBills=getBillsForDate(date),isPayday=payDates.includes(key),button=document.createElement("button");button.type="button";button.className="day";if(key===dateKey(today))button.classList.add("today");if(key===selectedDateKey)button.classList.add("selected");button.innerHTML=`<span class="day-number">${day}</span><span class="dots">${isPayday?`<span class="dot pay"></span>`:""}${dayBills.map(()=>`<span class="dot bill"></span>`).join("")}</span>`;button.addEventListener("click",()=>{selectedDateKey=key;renderCalendar();renderSelectedDay()});els.calendarGrid.appendChild(button)}}
+function renderSelectedDay(){const date=dateFromKey(selectedDateKey),dayBills=getBillsForDate(date),nextChecks=getNextPaychecks(PAYCHECK_COUNT),selectedCheck=nextChecks.find(c=>dateKey(c.date)===selectedDateKey),calendarPayDates=getPayDatesForCalendar(date.getFullYear(),date.getMonth()).map(dateKey),isPayday=calendarPayDates.includes(selectedDateKey);let html=`<h3>${formatLongDate(date)}</h3>`;if(isPayday){const check=selectedCheck||buildBasicCalendarCheck(date);html+=`<p class="small-note"><strong>Payday.</strong> Pay these bills from this paycheck:</p>`;if(check.bills.length){html+=`<ul class="mini-list">`;check.bills.forEach(b=>{html+=`<li><span>${formatShortDate(b.dueDate)}</span><span>${escapeHtml(b.name)}</span><strong>${formatMoney(b.amount)}</strong></li>`});html+=`</ul>`}else html+=`<p class="small-note">No bills are assigned to this paycheck period.</p>`}else if(dayBills.length){html+=`<ul class="mini-list">`;dayBills.forEach(b=>{html+=`<li><span>Due</span><span>${escapeHtml(b.name)}</span><strong>${formatMoney(b.amount)}</strong></li>`});html+=`</ul>`}else html+=`<p class="small-note">No bills or payday events on this day.</p>`;els.selectedDayBox.innerHTML=html}
+function buildBasicCalendarCheck(payDate){const nextDate=estimateNextPayDate(payDate),periodBills=getBillOccurrencesBetween(payDate,nextDate);return{date:payDate,nextDate,bills:periodBills,billTotal:periodBills.reduce((sum,b)=>sum+Number(b.amount||0),0)}}
+function renderPaychecks(){const checks=getNextPaychecks(PAYCHECK_COUNT);if(!checks.length){els.paycheckArea.innerHTML=`<div class="empty-state">Set up your paycheck information first.</div>`;return}els.paycheckArea.innerHTML=checks.map((check,index)=>{let billHtml="";if(check.bills.length){billHtml+=`<ul class="bill-lines">`;check.bills.forEach(b=>{billHtml+=`<li><span class="bill-date-tag">${formatShortDate(b.dueDate)}</span><span>${escapeHtml(b.name)}</span><strong>${formatMoney(b.amount)}</strong></li>`});if(check.cushionFromPrevious>0)billHtml+=`<li class="cushion-line"><span>Use</span><span>Cushion</span><strong>+${formatMoney(check.cushionFromPrevious)}</strong></li>`;if(check.holdForNext>0)billHtml+=`<li class="cushion-line"><span>Save</span><span>Cushion</span><strong>-${formatMoney(check.holdForNext)}</strong></li>`;if(check.warning)billHtml+=`<li class="cushion-line"><span>Short</span><span>Cushion</span><strong>-${formatMoney(check.warning)}</strong></li>`;billHtml+=`</ul>`}else{billHtml=`<p class="small-note">No bills are assigned to this paycheck period.</p>`;if(check.holdForNext>0||check.cushionFromPrevious>0||check.warning){billHtml+=`<ul class="bill-lines">`;if(check.cushionFromPrevious>0)billHtml+=`<li class="cushion-line"><span>Use</span><span>Cushion</span><strong>+${formatMoney(check.cushionFromPrevious)}</strong></li>`;if(check.holdForNext>0)billHtml+=`<li class="cushion-line"><span>Save</span><span>Cushion</span><strong>-${formatMoney(check.holdForNext)}</strong></li>`;if(check.warning)billHtml+=`<li class="cushion-line"><span>Short</span><span>Cushion</span><strong>-${formatMoney(check.warning)}</strong></li>`;billHtml+=`</ul>`}}const warningHtml=check.warning?`<div class="warning">This first visible paycheck is short ${formatMoney(check.warning)} from the cushion target.</div>`:"",finalClass=check.finalLeft<0?"money-out":"money-left";return`<article class="paycheck-card"><div class="paycheck-top"><div><h3>Paycheck ${index+1}</h3><p>${formatLongDate(check.date)} to ${formatShortDate(addDays(check.nextDate,-1))}</p></div><span class="pill">${formatMoney(check.amount||0)}</span></div>${billHtml}${warningHtml}<div class="summary-row"><div class="summary-box"><span>Bills from this check</span><strong class="money-out">${formatMoney(check.billTotal)}</strong></div><div class="summary-box"><span>${check.amount?"Left after bills and cushion":"Paycheck amount"}</span><strong class="${finalClass}">${formatMoney(check.amount?check.finalLeft:0)}</strong></div></div></article>`}).join("")}
+function renderBills(){const sorted=[...bills].sort((a,b)=>a.dueDay!==b.dueDay?a.dueDay-b.dueDay:a.name.localeCompare(b.name));els.billCountPill.textContent=`${bills.length} ${bills.length===1?"bill":"bills"}`;if(!sorted.length){els.billList.innerHTML=`<div class="empty-state">No bills yet. Add your first bill below.</div>`;return}els.billList.innerHTML=`<div class="bill-list">${sorted.map(b=>`<article class="bill-item"><div><h3>${escapeHtml(b.name)} — ${formatMoney(b.amount)}</h3><p>Due day ${b.dueDay} • ${getFrequencyLabel(b)}</p></div><div class="bill-actions"><button class="btn btn-small btn-blue" type="button" data-edit="${b.id}">Edit</button><button class="btn btn-small btn-danger" type="button" data-delete="${b.id}">Delete</button></div></article>`).join("")}</div>`;els.billList.querySelectorAll("[data-edit]").forEach(btn=>btn.addEventListener("click",()=>startEditBill(btn.dataset.edit)));els.billList.querySelectorAll("[data-delete]").forEach(btn=>btn.addEventListener("click",()=>deleteBill(btn.dataset.delete)))}
+function getFrequencyLabel(b){if(b.frequency==="yearly")return`Yearly in ${MONTH_NAMES[Number(b.startMonth)]}`;if(b.frequency==="every_other_month")return`Every other month from ${MONTH_NAMES[Number(b.startMonth)]}`;return"Monthly"}
+function renderSetupPreview(){const amount=Number(settings.paycheckAmount)||0,cushion=getCushionTarget(),nextDate=settings.nextPayDate?formatLongDate(dateFromKey(settings.nextPayDate)):"Not set",frequencyLabel={weekly:"Weekly",biweekly:"Every 2 weeks",semimonthly:"1st and 15th",monthly:"Monthly"}[settings.payFrequency]||"Every 2 weeks";els.setupPreview.innerHTML=`<strong>Current setup:</strong><br>Paycheck: ${formatMoney(amount)} • Cushion target: ${formatMoney(cushion)}<br>Frequency: ${frequencyLabel} • Next payday: ${nextDate}`}
+function fillFormOptions(){for(let day=1;day<=31;day++){const o=document.createElement("option");o.value=day;o.textContent=day;els.billDueDay.appendChild(o)}DEFAULT_BILLS.forEach(name=>{const o=document.createElement("option");o.value=name;els.billSuggestions.appendChild(o)});setStartMonthOptions("every_other_month",today.getMonth())}
+function setStartMonthOptions(mode,selectedValue){const currentValue=selectedValue??els.startMonth.value??today.getMonth();els.startMonth.innerHTML="";MONTH_NAMES.forEach((monthName,index)=>{const o=document.createElement("option");o.value=index;o.textContent=mode==="yearly"?`Yearly due in ${monthName}`:`Every other month starting in ${monthName}`;els.startMonth.appendChild(o)});els.startMonth.value=String(currentValue)}
+function updateFrequencyMonthPicker(selectedValue){const frequency=els.billFrequency.value;if(frequency==="every_other_month"||frequency==="yearly"){setStartMonthOptions(frequency,selectedValue);els.startMonth.classList.remove("hide")}else els.startMonth.classList.add("hide")}
+function fillSettingsForm(){els.paycheckAmount.value=settings.paycheckAmount||"";els.cushionTarget.value=settings.cushionTarget??400;els.payFrequency.value=settings.payFrequency;els.nextPayDate.value=settings.nextPayDate}
+function saveBillFromForm(){const name=els.billName.value.trim(),amount=Number(els.billAmount.value),dueDay=Number(els.billDueDay.value),frequency=els.billFrequency.value,startMonth=Number(els.startMonth.value||today.getMonth());if(!name){alert("Please enter a bill name.");return}if(!Number.isFinite(amount)||amount<0){alert("Please enter a valid bill amount.");return}const bill=normalizeBill({id:editingBillId||makeId(),name,amount,dueDay,frequency,startMonth});if(editingBillId)bills=bills.map(existing=>existing.id===editingBillId?bill:existing);else bills.push(bill);saveBills();clearBillForm();render()}
+function startEditBill(id){const bill=bills.find(item=>item.id===id);if(!bill)return;editingBillId=id;els.billFormTitle.textContent="Edit Bill";els.billName.value=bill.name;els.billAmount.value=bill.amount;els.billDueDay.value=bill.dueDay;els.billFrequency.value=bill.frequency;updateFrequencyMonthPicker(bill.startMonth);els.startMonth.value=String(bill.startMonth);document.getElementById("addBillSection").scrollIntoView({behavior:"smooth",block:"start"})}
+function deleteBill(id){const bill=bills.find(item=>item.id===id);if(!bill)return;if(!confirm(`Delete ${bill.name}?`))return;bills=bills.filter(item=>item.id!==id);saveBills();if(editingBillId===id)clearBillForm();render()}
+function clearBillForm(){editingBillId=null;els.billFormTitle.textContent="Add Bill";els.billName.value="";els.billAmount.value="";els.billDueDay.value="1";els.billFrequency.value="monthly";updateFrequencyMonthPicker()}
+function saveSettingsFromForm(){settings={paycheckAmount:els.paycheckAmount.value,cushionTarget:Number(els.cushionTarget.value)||0,payFrequency:els.payFrequency.value,nextPayDate:els.nextPayDate.value||formatDateInput(today)};saveSettings();render();els.backupStatus.textContent="Paycheck setup saved."}
+function exportBackup(){const cleanBills=bills.map(b=>({id:b.id,name:b.name,amount:Number(b.amount)||0,dueDay:Number(b.dueDay)||1,frequency:b.frequency||"monthly",startMonth:parseMonthValue(b.startMonth,today.getMonth())})),backup={version:14,exportedAt:new Date().toISOString(),bills:cleanBills,settings:{paycheckAmount:settings.paycheckAmount??"",cushionTarget:settings.cushionTarget??400,payFrequency:settings.payFrequency??"biweekly",nextPayDate:settings.nextPayDate??formatDateInput(today)}};const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=`my-bills-backup-${dateKey(today)}.json`;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);els.backupStatus.textContent="Backup exported with due days and frequencies saved."}
+function importBackup(file){if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result),importedBills=data.bills||data.billData||data.items||data.savedBills||[];if(!Array.isArray(importedBills))throw new Error("Backup does not contain bills.");bills=importedBills.map(normalizeBill).filter(Boolean);settings={...loadSettings(),...(data.settings||{})};settings.paycheckAmount=settings.paycheckAmount??"";settings.cushionTarget=settings.cushionTarget??400;settings.payFrequency=settings.payFrequency??"biweekly";settings.nextPayDate=settings.nextPayDate??formatDateInput(today);saveBills();saveSettings();fillSettingsForm();clearBillForm();render();els.backupStatus.textContent="Backup imported with due days and frequencies restored.";els.importFile.value=""}catch(err){els.backupStatus.textContent="Could not import that backup file.";alert("Could not import that backup file.")}};reader.readAsText(file)}
+function escapeHtml(value){return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+function checkForNewDay(){const current=startOfDay(new Date());if(dateKey(current)!==dateKey(today)){today=current;selectedDateKey=dateKey(today);visibleMonth=new Date(today.getFullYear(),today.getMonth(),1);render()}}
+els.prevMonthBtn.addEventListener("click",()=>{visibleMonth=new Date(visibleMonth.getFullYear(),visibleMonth.getMonth()-1,1);renderCalendar();renderSelectedDay()});
+els.nextMonthBtn.addEventListener("click",()=>{visibleMonth=new Date(visibleMonth.getFullYear(),visibleMonth.getMonth()+1,1);renderCalendar();renderSelectedDay()});
+els.billFrequency.addEventListener("change",()=>updateFrequencyMonthPicker());
+els.saveBillBtn.addEventListener("click",saveBillFromForm);els.cancelEditBtn.addEventListener("click",clearBillForm);els.saveSettingsBtn.addEventListener("click",saveSettingsFromForm);els.exportBtn.addEventListener("click",exportBackup);
+els.importFile.addEventListener("change",event=>importBackup(event.target.files[0]));
+window.addEventListener("focus",checkForNewDay);document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkForNewDay()});setInterval(checkForNewDay,60*60*1000);
+fillFormOptions();fillSettingsForm();clearBillForm();render();
+if("serviceWorker"in navigator)window.addEventListener("load",()=>{navigator.serviceWorker.register("./service-worker.js").catch(()=>{})});
+</script>
+</body>
 </html>
