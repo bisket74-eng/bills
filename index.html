@@ -102,11 +102,6 @@
 
 
 
-<section class="card card-next">
-  <h2 class="section-title">Pay Period Details <span class="pill" id="cushionPill">Cushion: $0</span></h2><p class="small-note">Optional breakdown of bills across pay periods. Your calendar above is the main cash-flow view.</p>
-  <div id="paycheckArea"></div>
-</section>
-
 <section class="card card-bills">
   <h2 class="section-title">Bills <span class="pill" id="billCountPill">0 bills</span></h2>
   <div id="billList"></div>
@@ -168,7 +163,7 @@ function addDays(date,days){const next=new Date(date);next.setDate(next.getDate(
 function addMonths(date,months){const next=new Date(date);next.setMonth(next.getMonth()+months);return startOfDay(next)}
 function makeId(){return window.crypto&&typeof window.crypto.randomUUID==="function"?window.crypto.randomUUID():`bill-${Date.now()}-${Math.random().toString(16).slice(2)}`}
 function parseMonthValue(value,fallback=today.getMonth()){if(value===undefined||value===null||value==="")return fallback;if(typeof value==="string"){const clean=value.trim().toLowerCase(),mi=MONTH_NAMES.findIndex(m=>m.toLowerCase()===clean),sm=MONTH_NAMES.findIndex(m=>m.slice(0,3).toLowerCase()===clean.slice(0,3));if(mi>=0)return mi;if(sm>=0&&Number.isNaN(Number(clean)))return sm}const n=Number(value);if(!Number.isFinite(n))return fallback;if(n>=0&&n<=11)return Math.floor(n);if(n>=1&&n<=12)return Math.floor(n)-1;return fallback}
-function loadBills(){try{const saved=JSON.parse(localStorage.getItem(BILL_STORAGE_KEY)||"[]");return Array.isArray(saved)?saved.map(normalizeBill).filter(Boolean):[]}catch(e){return[]}}
+function loadBills(){try{const saved=JSON.parse(localStorage.getItem(BILL_STORAGE_KEY)||"[]");if(!Array.isArray(saved))return[];let changed=false;const loaded=saved.map(normalizeBill).filter(Boolean).map(b=>{if(b.name.trim().toLowerCase()==="phone"&&Number(b.amount)!==325){changed=true;return{...b,amount:325}}return b});if(changed)localStorage.setItem(BILL_STORAGE_KEY,JSON.stringify(loaded));return loaded}catch(e){return[]}}
 function loadSettings(){const defaultNextPayday=getUpcomingFriday(today),defaults={paycheckAmount:"",cushionTarget:400,payFrequency:"biweekly",nextPayDate:formatDateInput(defaultNextPayday)};try{const saved=JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY)||"{}"),merged={...defaults,...saved};merged.checkingBalance=merged.checkingBalance??160;merged.otherBalance=merged.otherBalance??0;merged.paycheckAmount=merged.paycheckAmount??"";merged.cushionTarget=merged.cushionTarget??400;if(!["weekly","biweekly","semimonthly","monthly"].includes(merged.payFrequency))merged.payFrequency="biweekly";if(!merged.nextPayDate)merged.nextPayDate=formatDateInput(defaultNextPayday);return merged}catch(e){return defaults}}
 function saveBills(){localStorage.setItem(BILL_STORAGE_KEY,JSON.stringify(bills))}
 function saveSettings(){localStorage.setItem(SETTINGS_STORAGE_KEY,JSON.stringify(settings))}
@@ -278,7 +273,7 @@ function renderMoneyOverview(){
   document.getElementById("expensesMonthly").textContent=formatMoney(monthlyBills);
   document.getElementById("availableMonthly").textContent="Estimated remainder: "+formatMoney(remainder);
 }
-function render(){today=startOfDay(new Date());els.todayLine.textContent=formatLongDate(today);els.cushionPill.textContent=`Cushion: ${formatMoney(getCushionTarget())}`;renderMoneyOverview();renderCalendar();renderPaychecks();renderBills();renderSelectedDay();renderSetupPreview()}
+function render(){today=startOfDay(new Date());els.todayLine.textContent=formatLongDate(today);renderMoneyOverview();renderCalendar();renderBills();renderSelectedDay();renderSetupPreview()}
 function getCashFlowEvents(startDate,endDate){
   const events=[],start=startOfDay(startDate),end=startOfDay(endDate);
   // USPS paydays remain Friday; the $200 portion arrives Tuesday before payday.
