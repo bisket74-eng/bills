@@ -94,7 +94,7 @@
     <h3>Upcoming bills to protect</h3>
     <ul class="mini-list" id="protectedBillsList"><li><span>—</span><span>Loading bills</span><strong>—</strong></li></ul>
   </div>
-  <p class="small-note">This estimate protects the bills you've entered, using your scheduled income over the next four months. It does not subtract groceries, gas, or other everyday spending.</p>
+  <p class="small-note">This estimate protects bills using scheduled income over the next four months. Change a bill’s “Pay this one on” date to move only that occurrence; its regular due date stays the same. Everyday spending is not included.</p>
 </section>
 
 
@@ -176,6 +176,8 @@ const els={todayLine:document.getElementById("todayLine"),calendarTitle:document
 let today=startOfDay(new Date()), visibleMonth=new Date(today.getFullYear(),today.getMonth(),1), selectedDateKey=dateKey(today), editingBillId=null;
 let bills=loadBills(), settings=loadSettings();
 let paidOccurrences=loadPaidOccurrences();
+const PAYMENT_DATES_KEY="billTracker.paymentDates.v1";
+let paymentDateOverrides=loadPaymentDateOverrides();
 let spendingHistory=loadSpendingHistory();
 
 function startOfDay(date){return new Date(date.getFullYear(),date.getMonth(),date.getDate())}
@@ -196,6 +198,8 @@ function saveBills(){localStorage.setItem(BILL_STORAGE_KEY,JSON.stringify(bills)
 function saveSettings(){localStorage.setItem(SETTINGS_STORAGE_KEY,JSON.stringify(settings))}
 function loadPaidOccurrences(){try{const saved=JSON.parse(localStorage.getItem(PAID_STORAGE_KEY)||"{}");return saved&&typeof saved==="object"&&!Array.isArray(saved)?saved:{}}catch(e){return{}}}
 function savePaidOccurrences(){localStorage.setItem(PAID_STORAGE_KEY,JSON.stringify(paidOccurrences))}
+function loadPaymentDateOverrides(){try{const data=JSON.parse(localStorage.getItem(PAYMENT_DATES_KEY)||"{}");return data&&typeof data==="object"&&!Array.isArray(data)?data:{}}catch(e){return{}}}
+function savePaymentDateOverrides(){localStorage.setItem(PAYMENT_DATES_KEY,JSON.stringify(paymentDateOverrides))}
 const SPENDING_STORAGE_KEY="billTracker.spending.v1";
 function loadSpendingHistory(){try{const data=JSON.parse(localStorage.getItem(SPENDING_STORAGE_KEY)||"[]");return Array.isArray(data)?data:[]}catch(e){return[]}}
 function saveSpendingHistory(){localStorage.setItem(SPENDING_STORAGE_KEY,JSON.stringify(spendingHistory))}
@@ -216,6 +220,8 @@ function recordSpending(){
 function occurrenceKey(bill,dueDate){return `${bill.id}::${dateKey(dueDate)}`}
 function isOccurrencePaid(bill,dueDate){return !!paidOccurrences[occurrenceKey(bill,dueDate)]}
 function getOccurrencePaidDate(bill,dueDate){const value=paidOccurrences[occurrenceKey(bill,dueDate)];return value?dateFromKey(value):null}
+function getOccurrencePaymentDate(bill,dueDate){const value=paymentDateOverrides[occurrenceKey(bill,dueDate)];return value?dateFromKey(value):null}
+function setOccurrencePaymentDate(billId,dueDateKey,paymentDate){const key=`${billId}::${dueDateKey}`;if(!paymentDate){delete paymentDateOverrides[key]}else{const chosen=dateFromKey(paymentDate);if(chosen<today){document.getElementById("spendStatus").textContent="Choose today or a future date for this payment.";render();return}paymentDateOverrides[key]=paymentDate}savePaymentDateOverrides();render()}
 function toggleOccurrencePaid(billId,dueDateKey){const key=`${billId}::${dueDateKey}`;if(paidOccurrences[key])delete paidOccurrences[key];else paidOccurrences[key]=dateKey(today);savePaidOccurrences();render()}
 function normalizeBill(bill){if(!bill||!bill.name)return null;let frequency=String(bill.frequency??bill.billFrequency??bill.freq??bill.repeat??"monthly").toLowerCase().trim();if(["every other month","every-other-month","everyothermonth","bimonthly","bi-monthly"].includes(frequency))frequency="every_other_month";if(["annual","annually","year","once a year"].includes(frequency))frequency="yearly";if(!["monthly","every_other_month","yearly"].includes(frequency))frequency="monthly";let dueDay=bill.dueDay??bill.due_day??bill.day??bill.due??bill.billDueDay??bill.dueDate??bill.date;if(typeof dueDay==="string"&&dueDay.includes("-"))dueDay=dueDay.split("-").map(Number)[2];dueDay=Math.min(31,Math.max(1,Number(dueDay)||1));let startMonth=bill.startMonth??bill.start_month??bill.month??bill.dueMonth??today.getMonth();if(typeof bill.dueDate==="string"&&bill.dueDate.includes("-")){const p=bill.dueDate.split("-").map(Number);if(Number.isFinite(p[1]))startMonth=p[1]-1}startMonth=parseMonthValue(startMonth,today.getMonth());return{id:bill.id||makeId(),name:String(bill.name).trim(),amount:Number(bill.amount)||0,dueDay,frequency,startMonth}}
 function getUpcomingFriday(fromDate){const date=startOfDay(fromDate),day=date.getDay(),diff=(5-day+7)%7;return addDays(date,diff)}
@@ -326,7 +332,8 @@ function renderSpendingOverview(){
   const list=document.getElementById("protectedBillsList");
   if(list){
     const upcoming=events.filter(e=>e.type==="expense").slice(0,6);
-    list.innerHTML=upcoming.length?upcoming.map(e=>`<li><span>${formatShortDate(e.date)}</span><span>${escapeHtml(e.name)}</span><strong>${formatMoney(e.amount)}</strong></li>`).join(""):`<li><span>—</span><span>No listed bills in the next four months</span><strong>$0.00</strong></li>`;
+    list.innerHTML=upcoming.length?upcoming.map(e=>`<li><span>${formatShortDate(e.date)}</span><span>${escapeHtml(e.name)}</span><strong>${formatMoney(e.amount)}</strong><span style="grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--muted)">Pay this one on <input type="date" class="payment-date-input" data-payment-bill="${e.billId}" data-payment-due="${dateKey(e.dueDate)}" min="${dateKey(today)}" value="${dateKey(e.date)}" style="width:auto;flex:1;max-width:190px;padding:7px 9px;border-radius:10px;font-size:.85rem"></span></li>`).join(""):`<li><span>—</span><span>No listed bills in the next four months</span><strong>$0.00</strong></li>`;
+    list.querySelectorAll("[data-payment-bill]").forEach(input=>input.addEventListener("change",()=>setOccurrencePaymentDate(input.dataset.paymentBill,input.dataset.paymentDue,input.value)));
   }
 }
 function renderMoneyOverview(){
@@ -367,12 +374,12 @@ function getCashFlowEvents(startDate,endDate){
     bills.forEach(b=>{
       if(!billOccursInMonth(b,month.getFullYear(),month.getMonth()))return;
       const due=getBillDueDateInMonth(b,month.getFullYear(),month.getMonth());
-      const paid=getOccurrencePaidDate(b,due);let date=paid||due;if(!paid&&due<start&&due>=new Date(start.getFullYear(),start.getMonth(),1))date=start;
-      if(date>=start&&date<end)events.push({date,type:"expense",name:b.name,amount:Number(b.amount)||0,account:"Household",dueDate:due});
+      const paid=getOccurrencePaidDate(b,due),planned=getOccurrencePaymentDate(b,due);let date=paid||planned||due;if(!paid&&!planned&&due<start&&due>=new Date(start.getFullYear(),start.getMonth(),1))date=start;
+      if(date>=start&&date<end)events.push({date,type:"expense",name:b.name,amount:Number(b.amount)||0,account:"Household",dueDate:due,billId:b.id});
     });
     month=new Date(month.getFullYear(),month.getMonth()+1,1);
   }
-  return events.sort((a,b)=>a.date-b.date||(a.type==="income"?-1:1)||a.name.localeCompare(b.name));
+  return events.sort((a,b)=>a.date-b.date||(a.type===b.type?0:a.type==="income"?-1:1)||a.name.localeCompare(b.name));
 }
 function getCashBalanceThrough(date,inclusive=true){
   const start=today,cutoff=addDays(date,inclusive?1:0);
@@ -466,8 +473,8 @@ function startEditBill(id){const bill=bills.find(item=>item.id===id);if(!bill)re
 function deleteBill(id){const bill=bills.find(item=>item.id===id);if(!bill)return;if(!confirm(`Delete ${bill.name}?`))return;bills=bills.filter(item=>item.id!==id);saveBills();if(editingBillId===id)clearBillForm();render()}
 function clearBillForm(){editingBillId=null;els.billFormTitle.textContent="Add Bill";els.billName.value="";els.billAmount.value="";els.billDueDay.value="1";els.billFrequency.value="monthly";updateFrequencyMonthPicker()}
 function saveSettingsFromForm(){settings={...settings,paycheckAmount:els.paycheckAmount.value,payFrequency:els.payFrequency.value,nextPayDate:els.nextPayDate.value||formatDateInput(today),checkingBalance:Math.max(0,Number(els.checkingBalance.value)||0),otherBalance:Math.max(0,Number(els.otherBalance.value)||0)};saveSettings();render();els.backupStatus.textContent="Paycheck setup saved."}
-function exportBackup(){const cleanBills=bills.map(b=>({id:b.id,name:b.name,amount:Number(b.amount)||0,dueDay:Number(b.dueDay)||1,frequency:b.frequency||"monthly",startMonth:parseMonthValue(b.startMonth,today.getMonth())})),backup={version:17,exportedAt:new Date().toISOString(),bills:cleanBills,settings:{paycheckAmount:settings.paycheckAmount??"",payFrequency:settings.payFrequency??"biweekly",nextPayDate:settings.nextPayDate??formatDateInput(today),checkingBalance:settings.checkingBalance??160,otherBalance:settings.otherBalance??0},paidOccurrences,spendingHistory};;const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=`my-bills-backup-${dateKey(today)}.json`;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);els.backupStatus.textContent="Backup exported with due days and frequencies saved."}
-function importBackup(file){if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result),importedBills=data.bills||data.billData||data.items||data.savedBills||[];if(!Array.isArray(importedBills))throw new Error("Backup does not contain bills.");bills=importedBills.map(normalizeBill).filter(Boolean).map(b=>{const n=b.name.toLowerCase();if(n.includes("rent")||n.includes("mortgage"))return{...b,amount:2695};if(n==="phone")return{...b,amount:325};return b}).filter(b=>!b.name.toLowerCase().includes("affirm"));settings={...loadSettings(),...(data.settings||{})};settings.paycheckAmount="1600.00";settings.checkingBalance=settings.checkingBalance??160;settings.otherBalance=settings.otherBalance??0;settings.payFrequency=settings.payFrequency??"biweekly";settings.nextPayDate=settings.nextPayDate??formatDateInput(today);paidOccurrences=(data.paidOccurrences&&typeof data.paidOccurrences==="object"&&!Array.isArray(data.paidOccurrences))?data.paidOccurrences:paidOccurrences;spendingHistory=Array.isArray(data.spendingHistory)?data.spendingHistory:spendingHistory;saveSpendingHistory();saveBills();saveSettings();savePaidOccurrences();fillSettingsForm();clearBillForm();render();els.backupStatus.textContent="Backup imported with due days and frequencies restored.";els.importFile.value=""}catch(err){els.backupStatus.textContent="Could not import that backup file.";alert("Could not import that backup file.")}};reader.readAsText(file)}
+function exportBackup(){const cleanBills=bills.map(b=>({id:b.id,name:b.name,amount:Number(b.amount)||0,dueDay:Number(b.dueDay)||1,frequency:b.frequency||"monthly",startMonth:parseMonthValue(b.startMonth,today.getMonth())})),backup={version:18,exportedAt:new Date().toISOString(),bills:cleanBills,settings:{paycheckAmount:settings.paycheckAmount??"",payFrequency:settings.payFrequency??"biweekly",nextPayDate:settings.nextPayDate??formatDateInput(today),checkingBalance:settings.checkingBalance??160,otherBalance:settings.otherBalance??0},paidOccurrences,paymentDateOverrides,spendingHistory};;const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=`my-bills-backup-${dateKey(today)}.json`;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);els.backupStatus.textContent="Backup exported with due days and frequencies saved."}
+function importBackup(file){if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result),importedBills=data.bills||data.billData||data.items||data.savedBills||[];if(!Array.isArray(importedBills))throw new Error("Backup does not contain bills.");bills=importedBills.map(normalizeBill).filter(Boolean).map(b=>{const n=b.name.toLowerCase();if(n.includes("rent")||n.includes("mortgage"))return{...b,amount:2695};if(n==="phone")return{...b,amount:325};return b}).filter(b=>!b.name.toLowerCase().includes("affirm"));settings={...loadSettings(),...(data.settings||{})};settings.paycheckAmount="1600.00";settings.checkingBalance=settings.checkingBalance??160;settings.otherBalance=settings.otherBalance??0;settings.payFrequency=settings.payFrequency??"biweekly";settings.nextPayDate=settings.nextPayDate??formatDateInput(today);paidOccurrences=(data.paidOccurrences&&typeof data.paidOccurrences==="object"&&!Array.isArray(data.paidOccurrences))?data.paidOccurrences:paidOccurrences;paymentDateOverrides=(data.paymentDateOverrides&&typeof data.paymentDateOverrides==="object"&&!Array.isArray(data.paymentDateOverrides))?data.paymentDateOverrides:{};savePaymentDateOverrides();spendingHistory=Array.isArray(data.spendingHistory)?data.spendingHistory:spendingHistory;saveSpendingHistory();saveBills();saveSettings();savePaidOccurrences();fillSettingsForm();clearBillForm();render();els.backupStatus.textContent="Backup imported with due days and frequencies restored.";els.importFile.value=""}catch(err){els.backupStatus.textContent="Could not import that backup file.";alert("Could not import that backup file.")}};reader.readAsText(file)}
 function escapeHtml(value){return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
 function checkForNewDay(){const current=startOfDay(new Date());if(dateKey(current)!==dateKey(today)){today=current;selectedDateKey=dateKey(today);visibleMonth=new Date(today.getFullYear(),today.getMonth(),1);render()}}
 els.prevMonthBtn.addEventListener("click",()=>{visibleMonth=new Date(visibleMonth.getFullYear(),visibleMonth.getMonth()-1,1);renderCalendar();renderSelectedDay()});
