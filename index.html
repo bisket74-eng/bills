@@ -71,6 +71,13 @@
 <header class="top-header"><h1>My Bills</h1><p id="todayLine">Your monthly bills and paycheck plan</p></header>
 
 
+<section class="card card-calendar">
+  <div class="calendar-head"><button class="cal-nav" id="prevMonthBtn" type="button">‹</button><h2 id="calendarTitle">Month Year</h2><button class="cal-nav" id="nextMonthBtn" type="button">›</button></div><div class="summary-row"><div class="summary-box"><span>Available across both accounts</span><strong id="cashNow">$160.00</strong></div><div class="summary-box"><span>Projected at month end</span><strong id="cashMonthEnd">$160.00</strong></div></div><p class="small-note">Green = money coming in. Red = bills going out. Balances combine checking and the separate account so either can be used for bills.</p>
+  <div class="weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+  <div class="calendar-grid" id="calendarGrid"></div>
+  <div class="selected-day-box" id="selectedDayBox"><h3>Select a day</h3><p class="small-note">Tap a bill day or payday to see what is due.</p></div>
+</section>
+
 <section class="card card-next" id="moneyOverview">
   <h2 class="section-title">Your Monthly Money Picture <span class="pill">Household overview</span></h2>
   <div class="summary-row">
@@ -93,15 +100,10 @@
   <p class="small-note">Monthly figures are averages across the year. Actual cash flow changes with the calendar and the number of Fridays.</p>
 </section>
 
-<section class="card card-calendar">
-  <div class="calendar-head"><button class="cal-nav" id="prevMonthBtn" type="button">‹</button><h2 id="calendarTitle">Month Year</h2><button class="cal-nav" id="nextMonthBtn" type="button">›</button></div><div class="summary-row"><div class="summary-box"><span>Available across both accounts</span><strong id="cashNow">$160.00</strong></div><div class="summary-box"><span>Projected at month end</span><strong id="cashMonthEnd">$160.00</strong></div></div><p class="small-note">Green = money coming in. Red = bills going out. Balances combine checking and the separate account so either can be used for bills.</p>
-  <div class="weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
-  <div class="calendar-grid" id="calendarGrid"></div>
-  <div class="selected-day-box" id="selectedDayBox"><h3>Select a day</h3><p class="small-note">Tap a bill day or payday to see what is due.</p></div>
-</section>
+
 
 <section class="card card-next">
-  <h2 class="section-title">Next 6 Paychecks <span class="pill" id="cushionPill">Cushion: $0</span></h2>
+  <h2 class="section-title">Pay Period Details <span class="pill" id="cushionPill">Cushion: $0</span></h2><p class="small-note">Optional breakdown of bills across pay periods. Your calendar above is the main cash-flow view.</p>
   <div id="paycheckArea"></div>
 </section>
 
