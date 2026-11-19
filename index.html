@@ -70,6 +70,23 @@
 <main class="app">
 <header class="top-header"><h1>My Bills</h1><p id="todayLine">Your monthly bills and paycheck plan</p></header>
 
+<section class="card card-next" id="spendingOverview">
+  <p class="small-note" style="font-weight:900;letter-spacing:.08em;text-transform:uppercase">Available after protecting bills</p>
+  <div style="padding:8px 0 12px">
+    <div id="safeToSpend" style="font-size:2.8rem;line-height:1.05;font-weight:950;color:#2f7d50">$0.00</div>
+    <p class="small-note">SAFE TO SPEND RIGHT NOW</p>
+  </div>
+  <div class="summary-row">
+    <div class="summary-box"><span>Money in both accounts</span><strong id="cashAvailableNow">$160.00</strong></div>
+    <div class="summary-box"><span>Kept aside for upcoming bills</span><strong id="reservedForBills">$0.00</strong></div>
+  </div>
+  <div class="selected-day-box">
+    <h3>Upcoming bills to protect</h3>
+    <ul class="mini-list" id="protectedBillsList"><li><span>—</span><span>Loading bills</span><strong>—</strong></li></ul>
+  </div>
+  <p class="small-note">This estimate protects the bills you've entered, using your scheduled income over the next four months. It does not subtract groceries, gas, or other everyday spending.</p>
+</section>
+
 
 <section class="card card-calendar">
   <div class="calendar-head"><button class="cal-nav" id="prevMonthBtn" type="button">‹</button><h2 id="calendarTitle">Month Year</h2><button class="cal-nav" id="nextMonthBtn" type="button">›</button></div><div class="summary-row"><div class="summary-box"><span>Available across both accounts</span><strong id="cashNow">$160.00</strong></div><div class="summary-box"><span>Projected at month end</span><strong id="cashMonthEnd">$160.00</strong></div></div><p class="small-note">Green = money coming in. Red = bills going out. Balances combine checking and the separate account so either can be used for bills.</p>
@@ -263,6 +280,26 @@ function buildPaycheckPeriods(paychecks){const withBills=paychecks.map((check,in
 function estimateNextPayDate(date){if(settings.payFrequency==="weekly")return addDays(date,7);if(settings.payFrequency==="biweekly")return addDays(date,14);if(settings.payFrequency==="monthly")return addMonths(date,1);if(date.getDate()===1)return new Date(date.getFullYear(),date.getMonth(),15);return new Date(date.getFullYear(),date.getMonth()+1,1)}
 function applyCushionPlan(checks){const cushionTarget=getCushionTarget();checks.forEach(c=>{c.cushionFromPrevious=0;c.holdForNext=0;c.warning=0;c.leftAfterBills=(Number(c.amount)||0)-c.billTotal;c.finalLeft=c.leftAfterBills});for(let i=checks.length-1;i>=0;i--){const c=checks[i],amount=Number(c.amount)||0,leftAfterBillsAndSavingForNext=amount-c.billTotal-c.holdForNext,amountNeededFromPrevious=Math.max(0,cushionFromPreviousNeeded=cushionTarget-leftAfterBillsAndSavingForNext);if(amountNeededFromPrevious>0){if(i>0){c.cushionFromPrevious=amountNeededFromPrevious;checks[i-1].holdForNext+=amountNeededFromPrevious}else c.warning=amountNeededFromPrevious}}checks.forEach(c=>c.finalLeft=(Number(c.amount)||0)-c.billTotal+c.cushionFromPrevious-c.holdForNext);return checks}
 
+function renderSpendingOverview(){
+  const currentCash=(Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0);
+  const horizon=addDays(today,120),events=getCashFlowEvents(today,horizon);
+  let projected=currentCash,minProjected=currentCash;
+  events.forEach(event=>{
+    projected+=event.type==="income"?Number(event.amount||0):-Number(event.amount||0);
+    minProjected=Math.min(minProjected,projected);
+  });
+  const safeToSpend=Math.max(0,Math.min(currentCash,minProjected));
+  const reserve=Math.max(0,currentCash-safeToSpend);
+  const safeEl=document.getElementById("safeToSpend"),cashEl=document.getElementById("cashAvailableNow"),reserveEl=document.getElementById("reservedForBills");
+  if(safeEl)safeEl.textContent=formatMoney(safeToSpend);
+  if(cashEl)cashEl.textContent=formatMoney(currentCash);
+  if(reserveEl)reserveEl.textContent=formatMoney(reserve);
+  const list=document.getElementById("protectedBillsList");
+  if(list){
+    const upcoming=events.filter(e=>e.type==="expense").slice(0,6);
+    list.innerHTML=upcoming.length?upcoming.map(e=>`<li><span>${formatShortDate(e.date)}</span><span>${escapeHtml(e.name)}</span><strong>${formatMoney(e.amount)}</strong></li>`).join(""):`<li><span>—</span><span>No listed bills in the next four months</span><strong>$0.00</strong></li>`;
+  }
+}
 function renderMoneyOverview(){
   const uspsMonthly=1600*26/12, daughterMonthly=211*4, dilMonthly=845, totalIncome=uspsMonthly+daughterMonthly+dilMonthly;
   const monthlyBills=bills.reduce((sum,b)=>sum+(b.frequency==="monthly"?Number(b.amount||0):b.frequency==="every_other_month"?Number(b.amount||0)/2:Number(b.amount||0)/12),0);
@@ -273,7 +310,7 @@ function renderMoneyOverview(){
   document.getElementById("expensesMonthly").textContent=formatMoney(monthlyBills);
   document.getElementById("availableMonthly").textContent="Estimated remainder: "+formatMoney(remainder);
 }
-function render(){today=startOfDay(new Date());els.todayLine.textContent=formatLongDate(today);renderMoneyOverview();renderCalendar();renderBills();renderSelectedDay();renderSetupPreview()}
+function render(){today=startOfDay(new Date());els.todayLine.textContent=formatLongDate(today);renderSpendingOverview();renderMoneyOverview();renderCalendar();renderBills();renderSelectedDay();renderSetupPreview()}
 function getCashFlowEvents(startDate,endDate){
   const events=[],start=startOfDay(startDate),end=startOfDay(endDate);
   // USPS paydays remain Friday; the $200 portion arrives Tuesday before payday.
@@ -301,7 +338,7 @@ function getCashFlowEvents(startDate,endDate){
     bills.forEach(b=>{
       if(!billOccursInMonth(b,month.getFullYear(),month.getMonth()))return;
       const due=getBillDueDateInMonth(b,month.getFullYear(),month.getMonth());
-      const paid=getOccurrencePaidDate(b,due),date=paid||due;
+      const paid=getOccurrencePaidDate(b,due);let date=paid||due;if(!paid&&due<start&&due>=new Date(start.getFullYear(),start.getMonth(),1))date=start;
       if(date>=start&&date<end)events.push({date,type:"expense",name:b.name,amount:Number(b.amount)||0,account:"Household",dueDate:due});
     });
     month=new Date(month.getFullYear(),month.getMonth()+1,1);
