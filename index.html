@@ -375,7 +375,7 @@ function getCashFlowEvents(startDate,endDate){
     bills.forEach(b=>{
       if(!billOccursInMonth(b,month.getFullYear(),month.getMonth()))return;
       const due=getBillDueDateInMonth(b,month.getFullYear(),month.getMonth());
-      const paid=getOccurrencePaidDate(b,due),planned=getOccurrencePaymentDate(b,due);let date=paid||planned||due;if(!paid&&!planned&&due<start&&due>=new Date(start.getFullYear(),start.getMonth(),1))date=start;
+      const paid=getOccurrencePaidDate(b,due),planned=getOccurrencePaymentDate(b,due);let date=paid||planned||due;if(!paid&&!planned&&dateKey(start)===dateKey(today)&&due<start&&due>=new Date(start.getFullYear(),start.getMonth(),1))date=start;
       if(date>=start&&date<end)events.push({date,type:"expense",name:b.name,amount:Number(b.amount)||0,account:"Household",dueDate:due,billId:b.id});
     });
     month=new Date(month.getFullYear(),month.getMonth()+1,1);
