@@ -356,7 +356,8 @@ function getFourMonthSpendingForecast(fromDate=today){
   const end=new Date(start.getFullYear()+Math.floor(monthAfter/12),monthAfter%12,Math.min(start.getDate(),new Date(start.getFullYear()+Math.floor(monthAfter/12),monthAfter%12,0).getDate()));
   const allowance=getEverydayAllowance(start);
   // Protect only the current paycheck's remaining everyday allowance now.
-  const projectedBalance=getCashBalanceThrough(start);\n  const startingBalance=projectedBalance-allowance.remaining;
+  const projectedBalance=getCashBalanceThrough(start);
+  const startingBalance=projectedBalance-allowance.remaining;
   const events=getCashFlowEvents(addDays(start,1),end);
   let month=new Date(start.getFullYear(),start.getMonth()-1,1);
   while(month<end){
