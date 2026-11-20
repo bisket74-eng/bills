@@ -74,10 +74,9 @@
   <p class="small-note" data-period-label style="font-weight:900;letter-spacing:.08em;text-transform:uppercase">Until next payday</p>
   <div style="padding:8px 0 12px">
     <div id="safeToSpend" style="font-size:2.8rem;line-height:1.05;font-weight:950;color:#2f7d50">$0.00</div>
-    <p class="small-note">TOTAL AVAILABLE TO SPEND RIGHT NOW (INCLUDING EVERYDAY ALLOWANCE)</p>
+    <p class="small-note">AVAILABLE TO SPEND RIGHT NOW</p>
   </div>
   <div class="summary-row">
-    <div class="summary-box"><span>Everyday allowance left this USPS pay period</span><strong id="everydayAllowanceLeft">$400.00</strong></div>
     <div class="summary-box"><span>Projected balance after today's scheduled activity</span><strong id="cashAvailableNow">$160.00</strong></div>
     <div class="summary-box"><span>Protected for future bills</span><strong id="reservedForBills">$0.00</strong></div>
   </div>
@@ -86,7 +85,6 @@
     <p class="small-note">Enter what you spent and it will come off your available money.</p>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <input id="spendAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="Amount, e.g. 60.00" aria-label="Amount spent" style="flex:1;min-width:150px;padding:14px;border:1px solid #d5dfd8;border-radius:12px;font:inherit">
-      <select id="spendCategory" aria-label="Purchase type" style="flex:1;min-width:180px;padding:14px;border:1px solid #d5dfd8;border-radius:12px;font:inherit"><option value="everyday">Everyday ($400 paycheck allowance)</option><option value="extra">Extra purchase (gifts, shopping)</option></select>
       <button id="recordSpendBtn" type="button" class="primary-btn">Subtract</button>
     </div>
     <p id="spendStatus" class="small-note" aria-live="polite"></p>
@@ -96,7 +94,7 @@
     <h3>Upcoming bills to protect</h3>
     <ul class="mini-list" id="protectedBillsList"><li><span>—</span><span>Loading bills</span><strong>—</strong></li></ul>
   </div>
-  <p class="small-note">The amount above includes both your remaining $400 everyday allowance for this USPS pay period and extra money that is safe after protecting future bills. Subtract gas, groceries, and everyday purchases using the Everyday option; that reduces the allowance and the total available amount. Extra purchases reduce the extra portion. Your allowance resets to $400 on your next USPS payday.</p>
+  <p class="small-note">The amount above is one combined spending total. It includes your $400 paycheck cushion plus any additional money safe to spend after protecting future bills. Every purchase comes out of this same total. The $400 cushion refreshes on each USPS payday.</p>
 </section>
 
 
@@ -206,25 +204,21 @@ const SPENDING_STORAGE_KEY="billTracker.spending.v1";
 function loadSpendingHistory(){try{const data=JSON.parse(localStorage.getItem(SPENDING_STORAGE_KEY)||"[]");return Array.isArray(data)?data:[]}catch(e){return[]}}
 function saveSpendingHistory(){localStorage.setItem(SPENDING_STORAGE_KEY,JSON.stringify(spendingHistory))}
 function recordSpending(){
-  const amount=Number(document.getElementById("spendAmount").value),category=document.getElementById("spendCategory").value;
+  const amount=Number(document.getElementById("spendAmount").value);
   const status=document.getElementById("spendStatus");
   if(!Number.isFinite(amount)||amount<=0){status.textContent="Enter an amount greater than zero.";return}
   const total=(Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0);
   if(amount>total){status.textContent="That is more than the money currently recorded in both accounts. Update your account balances first.";return}
-  const allowance=getEverydayAllowance(today);
-  if(category==="everyday"&&amount>allowance.remaining){status.textContent="Only "+formatMoney(allowance.remaining)+" remains in this paycheck's everyday allowance. Choose Extra purchase if this is beyond that allowance.";return}
-  if(category==="extra"){
-    const safe=getFourMonthSpendingForecast(today).safeToSpend;
-    if(amount>safe){status.textContent="That is more than your extra safe-to-spend amount of "+formatMoney(safe)+". It could put a future bill at risk.";return}
-  }
+  const forecast=getFourMonthSpendingForecast(today);
+  const totalAvailable=forecast.safeToSpend+forecast.allowance.remaining;
+  if(amount>totalAvailable){status.textContent="That purchase is more than your total available spending money after protecting future bills.";return}
   let remaining=amount,checking=Number(settings.checkingBalance)||0,other=Number(settings.otherBalance)||0;
   const fromChecking=Math.min(checking,remaining);checking-=fromChecking;remaining-=fromChecking;other=Math.max(0,other-remaining);
   settings.checkingBalance=checking;settings.otherBalance=other;saveSettings();if(els.checkingBalance)els.checkingBalance.value=checking.toFixed(2);if(els.otherBalance)els.otherBalance.value=other.toFixed(2);
-  if(category==="everyday"){everydaySpending.unshift({amount,date:dateKey(today),payday:dateKey(allowance.payday),time:new Date().toISOString()});saveEverydaySpending()}
-  spendingHistory.unshift({amount,date:dateKey(today),category,time:new Date().toISOString()});
+  spendingHistory.unshift({amount,date:dateKey(today),time:new Date().toISOString()});
   spendingHistory=spendingHistory.slice(0,12);saveSpendingHistory();
   document.getElementById("spendAmount").value="";
-  status.textContent=formatMoney(amount)+" subtracted from your "+(category==="everyday"?"everyday allowance":"extra spending money")+".";
+  status.textContent=formatMoney(amount)+" subtracted from your total available spending money.";
   render();
 }
 function occurrenceKey(bill,dueDate){return `${bill.id}::${dateKey(dueDate)}`}
@@ -389,7 +383,6 @@ function renderSpendingOverview(){
   const safeEl=document.getElementById("safeToSpend"),cashEl=document.getElementById("cashAvailableNow"),reserveEl=document.getElementById("reservedForBills");
   const totalAvailableToSpend=safeToSpend+forecast.allowance.remaining;
   if(safeEl)safeEl.textContent=formatMoney(totalAvailableToSpend);
-  const allowanceEl=document.getElementById("everydayAllowanceLeft");if(allowanceEl)allowanceEl.textContent=formatMoney(forecast.allowance.remaining);
   const safeCaption=document.querySelector("#spendingOverview .small-note");
   if(safeCaption){
     const limit=forecast.limitingEvent;
