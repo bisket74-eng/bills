@@ -203,7 +203,7 @@ function savePaymentDateOverrides(){localStorage.setItem(PAYMENT_DATES_KEY,JSON.
 const SPENDING_STORAGE_KEY="billTracker.transactions.v2";
 const LEGACY_SPENDING_STORAGE_KEY="billTracker.spending.v1";
 function loadSpendingHistory(){try{const current=localStorage.getItem(SPENDING_STORAGE_KEY);const raw=current===null?localStorage.getItem(LEGACY_SPENDING_STORAGE_KEY):current;const data=JSON.parse(raw||"[]");return Array.isArray(data)?data.filter(item=>item&&item.date&&Number(item.amount)>0):[]}catch(e){return[]}}
-function saveSpendingHistory(){const serialized=JSON.stringify(spendingHistory);localStorage.setItem(SPENDING_STORAGE_KEY,serialized);const check=localStorage.getItem(SPENDING_STORAGE_KEY);if(check!==serialized)throw new Error("Saved purchase records could not be verified on this device.");localStorage.setItem(LEGACY_SPENDING_STORAGE_KEY,serialized)}
+function saveSpendingHistory(){const serialized=JSON.stringify(spendingHistory);localStorage.setItem(SPENDING_STORAGE_KEY,serialized);const check=localStorage.getItem(SPENDING_STORAGE_KEY);if(check!==serialized)throw new Error("Saved purchase records could not be verified on this device.")}
 function recordSpending(){
   const amount=Number(document.getElementById("spendAmount").value);
   const status=document.getElementById("spendStatus");
