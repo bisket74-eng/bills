@@ -424,11 +424,12 @@ function renderDailyMoneyLedger(){
   let html=`<div class="mini-list"><div style="display:flex;justify-content:space-between;gap:12px;padding:10px 4px;font-weight:900"><span>Today · Starting balance</span><strong>${formatMoney(balance)}</strong></div>`;
   for(let day=new Date(start);day<end;day=addDays(day,1)){
     const dayEvents=events.filter(e=>dateKey(e.date)===dateKey(day));
-    html+=`<div style="padding:12px 4px;border-top:1px solid rgba(100,120,110,.18)"><div style="font-weight:900;margin-bottom:6px">${formatLongDate(day)}</div>`;
+    html+=`<div style="padding:14px 4px;border-top:3px solid #d9534f;margin-top:6px"><div style="font-weight:900;font-size:1.08rem;margin-bottom:8px">${formatLongDate(day)}</div>`;
     if(dayEvents.length){
       dayEvents.forEach(e=>{const amount=Number(e.amount)||0;balance+=e.type==="income"?amount:-amount;const sign=e.type==="income"?"+":"−",cls=e.type==="income"?"money-left":"money-out";html+=`<div style="display:flex;justify-content:space-between;gap:10px;padding:4px 0"><span>${sign} ${escapeHtml(e.name)}</span><strong class="${cls}" style="white-space:nowrap">${sign}${formatMoney(amount)}</strong></div>`;});
     }else html+=`<div class="small-note">No scheduled money in or out</div>`;
-    html+=`<div style="display:flex;justify-content:space-between;gap:12px;border-top:1px dashed rgba(100,120,110,.25);padding-top:7px;margin-top:5px;font-weight:900"><span>End-of-day total</span><strong>${formatMoney(balance)}</strong></div></div>`;
+    const safe=calculateSafeToSpendOn(day),reserved=Math.max(0,balance-safe);
+    html+=`<div style="display:flex;justify-content:space-between;gap:12px;border-top:1px dashed rgba(100,120,110,.25);padding-top:7px;margin-top:7px;font-weight:900"><span>End-of-day balance</span><strong>${formatMoney(balance)}</strong></div><div style="display:flex;justify-content:space-between;gap:12px;padding:5px 0;color:#a43b32"><span>Reserved for upcoming bills</span><strong>${formatMoney(reserved)}</strong></div><div style="display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-weight:900;color:#2f7d50"><span>Safe to spend</span><strong>${formatMoney(safe)}</strong></div></div>`;
   }
   host.innerHTML=html+`</div>`;
 }
