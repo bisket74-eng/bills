@@ -99,7 +99,7 @@
 
 
 <section class="card card-calendar">
-  <div class="calendar-head"><button class="cal-nav" id="prevMonthBtn" type="button">‹</button><h2 id="calendarTitle">Month Year</h2><button class="cal-nav" id="nextMonthBtn" type="button">›</button></div><div class="summary-row"><div class="summary-box" style="grid-column:1/-1"><span>Available to spend right now</span><strong id="calendarSafeToSpend" style="font-size:1.65rem;color:#2f7d50">$0.00</strong><p class="small-note">Based on your current balances and upcoming bills, assuming no extra purchases.</p></div></div><p class="small-note">Green = money coming in. Red = bills going out. Balances combine checking and the separate account so either can be used for bills.</p>
+  <div class="calendar-head"><button class="cal-nav" id="prevMonthBtn" type="button">‹</button><h2 id="calendarTitle">Month Year</h2><button class="cal-nav" id="nextMonthBtn" type="button">›</button></div><div class="summary-row"><div class="summary-box" style="grid-column:1/-1"><span id="calendarSafeLabel">Available to spend right now</span><strong id="calendarSafeToSpend" style="font-size:1.65rem;color:#2f7d50">$0.00</strong><p class="small-note">Based on your current balances and upcoming bills, assuming no extra purchases.</p></div></div><p class="small-note">Green = money coming in. Red = bills going out. Balances combine checking and the separate account so either can be used for bills.</p>
   <div class="weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
   <div class="calendar-grid" id="calendarGrid"></div>
   <div class="selected-day-box" id="selectedDayBox"><h3>Select a day</h3><p class="small-note">Tap a bill day or payday to see what is due.</p></div>
@@ -313,22 +313,34 @@ function buildPaycheckPeriods(paychecks){const withBills=paychecks.map((check,in
 function estimateNextPayDate(date){if(settings.payFrequency==="weekly")return addDays(date,7);if(settings.payFrequency==="biweekly")return addDays(date,14);if(settings.payFrequency==="monthly")return addMonths(date,1);if(date.getDate()===1)return new Date(date.getFullYear(),date.getMonth(),15);return new Date(date.getFullYear(),date.getMonth()+1,1)}
 function applyCushionPlan(checks){const cushionTarget=getCushionTarget();checks.forEach(c=>{c.cushionFromPrevious=0;c.holdForNext=0;c.warning=0;c.leftAfterBills=(Number(c.amount)||0)-c.billTotal;c.finalLeft=c.leftAfterBills});for(let i=checks.length-1;i>=0;i--){const c=checks[i],amount=Number(c.amount)||0,leftAfterBillsAndSavingForNext=amount-c.billTotal-c.holdForNext,amountNeededFromPrevious=Math.max(0,cushionFromPreviousNeeded=cushionTarget-leftAfterBillsAndSavingForNext);if(amountNeededFromPrevious>0){if(i>0){c.cushionFromPrevious=amountNeededFromPrevious;checks[i-1].holdForNext+=amountNeededFromPrevious}else c.warning=amountNeededFromPrevious}}checks.forEach(c=>c.finalLeft=(Number(c.amount)||0)-c.billTotal+c.cushionFromPrevious-c.holdForNext);return checks}
 
-function renderSpendingOverview(){
-  const currentCash=(Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0);
-  const horizon=addDays(today,120),events=getCashFlowEvents(today,horizon);
-  let projected=currentCash,minProjected=currentCash;
-  events.forEach(event=>{
+function calculateSafeToSpendOn(date){
+  const selected=startOfDay(date);
+  if(selected<today)return 0;
+  const balance=getCashBalanceThrough(selected);
+  const horizon=addDays(selected,120);
+  let projected=balance,minProjected=balance;
+  getCashFlowEvents(addDays(selected,1),horizon).forEach(event=>{
     projected+=event.type==="income"?Number(event.amount||0):-Number(event.amount||0);
     minProjected=Math.min(minProjected,projected);
   });
-  const safeToSpend=Math.max(0,Math.min(currentCash,minProjected));
+  return Math.max(0,Math.min(balance,minProjected));
+}
+function renderSpendingOverview(){
+  const currentCash=(Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0);
+  const events=getCashFlowEvents(today,addDays(today,120));
+  const safeToSpend=calculateSafeToSpendOn(today);
   const reserve=Math.max(0,currentCash-safeToSpend);
   const safeEl=document.getElementById("safeToSpend"),cashEl=document.getElementById("cashAvailableNow"),reserveEl=document.getElementById("reservedForBills");
   if(safeEl)safeEl.textContent=formatMoney(safeToSpend);
   if(cashEl)cashEl.textContent=formatMoney(currentCash);
   if(reserveEl)reserveEl.textContent=formatMoney(reserve);
   const calendarSafeEl=document.getElementById("calendarSafeToSpend");
-  if(calendarSafeEl)calendarSafeEl.textContent=formatMoney(safeToSpend);
+  const calendarSafeLabel=document.getElementById("calendarSafeLabel");
+  const selectedDate=dateFromKey(selectedDateKey||dateKey(today));
+  const selectedIsToday=dateKey(selectedDate)===dateKey(today);
+  const selectedSafe=selectedIsToday?safeToSpend:calculateSafeToSpendOn(selectedDate);
+  if(calendarSafeEl)calendarSafeEl.textContent=selectedDate<today?"—":formatMoney(selectedSafe);
+  if(calendarSafeLabel)calendarSafeLabel.textContent=selectedIsToday?"Available to spend right now":`Available to spend on ${formatShortDate(selectedDate)}`;
   const recent=document.getElementById("recentSpendingList");
   if(recent)recent.innerHTML=spendingHistory.slice(0,4).map(item=>`<li><span>${formatShortDate(dateFromKey(item.date))}</span><span>Purchase recorded</span><strong>−${formatMoney(item.amount)}</strong></li>`).join("");
   const list=document.getElementById("protectedBillsList");
@@ -399,7 +411,7 @@ function renderCalendar(){
     const date=new Date(year,monthIndex,day),key=dateKey(date),events=getCashFlowEvents(date,addDays(date,1)),button=document.createElement("button");
     button.type="button";button.className="day";if(key===dateKey(today))button.classList.add("today");if(key===selectedDateKey)button.classList.add("selected");
     button.innerHTML=`<span class="day-number">${day}</span><span class="dots">${events.filter(e=>e.type==="income").map(()=>`<span class="dot pay"></span>`).join("")}${events.filter(e=>e.type==="expense").map(()=>`<span class="dot bill"></span>`).join("")}</span>`;
-    button.addEventListener("click",()=>{selectedDateKey=key;renderCalendar();renderSelectedDay()});els.calendarGrid.appendChild(button);
+    button.addEventListener("click",()=>{selectedDateKey=key;renderCalendar();renderSelectedDay();renderSpendingOverview()});els.calendarGrid.appendChild(button);
   }
 
 }
@@ -413,7 +425,7 @@ function renderSelectedDay(){
   }else html+=`<p class="small-note">No scheduled income or bills on this day.</p>`;
   if(date>=today){
     const balance=getCashBalanceThrough(date);
-    html+=`<div class="selected-day-box" style="margin-top:12px"><p class="small-note" style="font-weight:900;margin:0 0 5px">MONEY AVAILABLE IF YOU MAKE NO EXTRA PURCHASES</p><strong style="display:block;font-size:2rem;line-height:1.15;color:#2f7d50">${formatMoney(balance)}</strong><p class="small-note">This is your projected combined balance after all income and bills through ${formatShortDate(date)}. It assumes no extra spending beyond purchases you have already subtracted.</p></div>`;
+    html+=`<p class="small-note"><strong>Projected combined account balance after this day: ${formatMoney(balance)}</strong></p>`;
   }else html+=`<p class="small-note">Your starting balance is set as of today, so earlier dates do not have a calculated balance.</p>`;
   html+=`<p class="small-note">This projection includes scheduled income and listed bills. Use “Subtract a purchase” to record groceries, gas, or anything else you spend; future calendar balances will then decrease accordingly.</p>`;
   els.selectedDayBox.innerHTML=html;
