@@ -77,7 +77,7 @@
     <p class="small-note">SAFE TO SPEND RIGHT NOW</p>
   </div>
   <div class="summary-row">
-    <div class="summary-box"><span>Projected balance after today’s activity</span><strong id="cashAvailableNow">$160.00</strong></div>
+    <div class="summary-box"><span>Projected balance after bills and paycheck allowances</span><strong id="cashAvailableNow">$160.00</strong></div>
     <div class="summary-box"><span>Protected for future bills and paycheck allowances</span><strong id="reservedForBills">$0.00</strong></div>
   </div>
   <div class="selected-day-box" style="margin-top:14px">
@@ -330,26 +330,31 @@ function getFourMonthSpendingForecast(fromDate=today){
   const end=new Date(start.getFullYear()+Math.floor(monthAfter/12),monthAfter%12,Math.min(start.getDate(),new Date(start.getFullYear()+Math.floor(monthAfter/12),monthAfter%12,0).getDate()));
   // Begin with the projected balance AFTER all deposits and bills on the
   // selected date. This is essential on payday: today's income is spendable.
-  const startingBalance=getCashBalanceThrough(start);
+  const cashAfterScheduledActivity=getCashBalanceThrough(start);
+  // Carry forward the $400 protections from every USPS payday since today,
+  // including the selected date if it is a payday.
+  let reservedPaychecks=0;
+  let month=new Date(today.getFullYear(),today.getMonth()-1,1);
+  while(month<=start){
+    getPayDatesForCalendar(month.getFullYear(),month.getMonth()).forEach(payday=>{
+      if(payday>=today&&payday<=start)reservedPaychecks++;
+    });
+    month=new Date(month.getFullYear(),month.getMonth()+1,1);
+  }
+  const startingBalance=cashAfterScheduledActivity-reservedPaychecks*400;
   const events=getCashFlowEvents(addDays(start,1),end);
-  // Protect $400 once on each USPS Friday payday, including the selected day
-  // if it is payday. Tuesday's $200 is only the split portion of that check.
-  let month=new Date(start.getFullYear(),start.getMonth()-1,1);
+  // Reserve another $400 for each USPS payday after the selected date.
+  // Tuesday's $200 is part of that same biweekly paycheck.
+  month=new Date(start.getFullYear(),start.getMonth()-1,1);
   while(month<end){
     getPayDatesForCalendar(month.getFullYear(),month.getMonth()).forEach(payday=>{
-      if(payday>=start&&payday<end)events.push({date:payday,type:"reserve",name:"USPS paycheck everyday allowance",amount:400});
+      if(payday>start&&payday<end)events.push({date:payday,type:"reserve",name:"USPS paycheck everyday allowance",amount:400});
     });
     month=new Date(month.getFullYear(),month.getMonth()+1,1);
   }
   const priority=e=>e.type==="income"?0:e.type==="expense"?1:2;
   events.sort((a,b)=>a.date-b.date||priority(a)-priority(b));
-  let projected=startingBalance,minimum=startingBalance,limitingEvent=null;
-  // Today's payday allowance is reserved against today's projected balance.
-  if(getPayDatesForCalendar(start.getFullYear(),start.getMonth()).some(d=>dateKey(d)===dateKey(start))){
-    projected-=400;
-    minimum=Math.min(minimum,projected);
-    limitingEvent={date:start,type:"reserve",name:"USPS paycheck everyday allowance",amount:400};
-  }
+  let projected=startingBalance,minimum=startingBalance,limitingEvent=reservedPaychecks?{date:start,type:"reserve",name:"USPS paycheck everyday allowance",amount:reservedPaychecks*400}:null;
   events.forEach(event=>{
     projected+=event.type==="income"?Number(event.amount||0):-Number(event.amount||0);
     if(projected<minimum){minimum=projected;limitingEvent=event;}
