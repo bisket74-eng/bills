@@ -207,18 +207,13 @@ function recordSpending(){
   const amount=Number(document.getElementById("spendAmount").value);
   const status=document.getElementById("spendStatus");
   if(!Number.isFinite(amount)||amount<=0){status.textContent="Enter an amount greater than zero.";return}
-  const total=(Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0);
-  if(amount>total){status.textContent="That is more than the money currently recorded in both accounts. Update your account balances first.";return}
   const forecast=getFourMonthSpendingForecast(today);
   const totalAvailable=forecast.safeToSpend+forecast.allowance.remaining;
   if(amount>totalAvailable){status.textContent="That purchase is more than your total available spending money after protecting future bills.";return}
-  let remaining=amount,checking=Number(settings.checkingBalance)||0,other=Number(settings.otherBalance)||0;
-  const fromChecking=Math.min(checking,remaining);checking-=fromChecking;remaining-=fromChecking;other=Math.max(0,other-remaining);
-  settings.checkingBalance=checking;settings.otherBalance=other;saveSettings();if(els.checkingBalance)els.checkingBalance.value=checking.toFixed(2);if(els.otherBalance)els.otherBalance.value=other.toFixed(2);
-  spendingHistory.unshift({amount,date:dateKey(today),time:new Date().toISOString()});
+  spendingHistory.unshift({amount,date:dateKey(today),time:new Date().toISOString(),forecastAdjustment:true});
   spendingHistory=spendingHistory.slice(0,12);saveSpendingHistory();
   document.getElementById("spendAmount").value="";
-  status.textContent=formatMoney(amount)+" subtracted from your total available spending money.";
+  status.textContent=formatMoney(amount)+" recorded as an extra expense today and subtracted from your projected available money.";
   render();
 }
 function occurrenceKey(bill,dueDate){return `${bill.id}::${dateKey(dueDate)}`}
@@ -445,6 +440,11 @@ function getCashFlowEvents(startDate,endDate){
     if(last>=start&&last<end)events.push({date:last,type:"income",name:"Daughter-in-law contribution",amount:845,account:"Household"});
     cursor=new Date(y,m+1,1);
   }
+  // Extra purchases are recorded as dated forecast expenses, without changing the original starting balance.
+  spendingHistory.filter(item=>item.forecastAdjustment===true).forEach(item=>{
+    const date=dateFromKey(item.date);
+    if(date>=start&&date<end)events.push({date,type:"expense",name:"Extra purchase",amount:Number(item.amount)||0,account:"Household"});
+  });
   // Bills are automatically deducted on their due date unless a planned date is selected.
   let month=new Date(start.getFullYear(),start.getMonth()-1,1);
   while(month<stop){
