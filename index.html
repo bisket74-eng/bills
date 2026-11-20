@@ -77,7 +77,7 @@
     <p class="small-note">SAFE TO SPEND RIGHT NOW</p>
   </div>
   <div class="summary-row">
-    <div class="summary-box"><span>Money in both accounts</span><strong id="cashAvailableNow">$160.00</strong></div>
+    <div class="summary-box"><span>Projected balance after today’s activity</span><strong id="cashAvailableNow">$160.00</strong></div>
     <div class="summary-box"><span>Protected for future bills and paycheck allowances</span><strong id="reservedForBills">$0.00</strong></div>
   </div>
   <div class="selected-day-box" style="margin-top:14px">
@@ -327,12 +327,13 @@ function findNextScheduledPayday(fromDate){
 function getFourMonthSpendingForecast(fromDate=today){
   const start=startOfDay(fromDate);
   const monthAfter=start.getMonth()+4;
-  const horizon=new Date(start.getFullYear()+Math.floor(monthAfter/12),monthAfter%12,1);
-  const lastDay=new Date(horizon.getFullYear(),horizon.getMonth(),0).getDate();
-  const end=new Date(start.getFullYear()+Math.floor(monthAfter/12),monthAfter%12,Math.min(start.getDate(),lastDay));
-  const events=getCashFlowEvents(start,end);
-  // Reserve $400 once for each USPS biweekly paycheck. The Tuesday $200
-  // deposit is part of that same paycheck and does not create another reserve.
+  const end=new Date(start.getFullYear()+Math.floor(monthAfter/12),monthAfter%12,Math.min(start.getDate(),new Date(start.getFullYear()+Math.floor(monthAfter/12),monthAfter%12,0).getDate()));
+  // Begin with the projected balance AFTER all deposits and bills on the
+  // selected date. This is essential on payday: today's income is spendable.
+  const startingBalance=getCashBalanceThrough(start);
+  const events=getCashFlowEvents(addDays(start,1),end);
+  // Protect $400 once on each USPS Friday payday, including the selected day
+  // if it is payday. Tuesday's $200 is only the split portion of that check.
   let month=new Date(start.getFullYear(),start.getMonth()-1,1);
   while(month<end){
     getPayDatesForCalendar(month.getFullYear(),month.getMonth()).forEach(payday=>{
@@ -342,27 +343,30 @@ function getFourMonthSpendingForecast(fromDate=today){
   }
   const priority=e=>e.type==="income"?0:e.type==="expense"?1:2;
   events.sort((a,b)=>a.date-b.date||priority(a)-priority(b));
-  let projected=(Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0);
-  let minimum=projected,limitingEvent=null;
+  let projected=startingBalance,minimum=startingBalance,limitingEvent=null;
+  // Today's payday allowance is reserved against today's projected balance.
+  if(getPayDatesForCalendar(start.getFullYear(),start.getMonth()).some(d=>dateKey(d)===dateKey(start))){
+    projected-=400;
+    minimum=Math.min(minimum,projected);
+    limitingEvent={date:start,type:"reserve",name:"USPS paycheck everyday allowance",amount:400};
+  }
   events.forEach(event=>{
     projected+=event.type==="income"?Number(event.amount||0):-Number(event.amount||0);
     if(projected<minimum){minimum=projected;limitingEvent=event;}
   });
-  return{safeToSpend:Math.max(0,Math.min((Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0),minimum)),minimum,limitingEvent,end,events};
+  return{safeToSpend:Math.max(0,minimum),minimum,limitingEvent,end,events,startingBalance};
 }
 function calculateSafeToSpendOn(date){
   const selected=startOfDay(date);
   if(selected<today)return 0;
-  const balance=getCashBalanceThrough(selected);
-  const forecast=getFourMonthSpendingForecast(selected);
-  return Math.max(0,Math.min(balance,forecast.safeToSpend));
+  return getFourMonthSpendingForecast(selected).safeToSpend;
 }
 function renderSpendingOverview(){
   const currentCash=(Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0);
   const forecast=getFourMonthSpendingForecast(today);
   const safeToSpend=forecast.safeToSpend;
   const events=getCashFlowEvents(today,forecast.end);
-  const reserve=Math.max(0,currentCash-safeToSpend);
+  const reserve=Math.max(0,forecast.startingBalance-safeToSpend);
   const safeEl=document.getElementById("safeToSpend"),cashEl=document.getElementById("cashAvailableNow"),reserveEl=document.getElementById("reservedForBills");
   if(safeEl)safeEl.textContent=formatMoney(safeToSpend);
   const safeCaption=document.querySelector("#spendingOverview .small-note");
@@ -374,7 +378,7 @@ function renderSpendingOverview(){
   }
   const periodLabel=document.querySelector("#spendingOverview [data-period-label]");
   if(periodLabel)periodLabel.textContent=`Safe to spend today · 4-month forecast`;
-  if(cashEl)cashEl.textContent=formatMoney(currentCash);
+  if(cashEl)cashEl.textContent=formatMoney(forecast.startingBalance);
   if(reserveEl)reserveEl.textContent=formatMoney(reserve);
   const calendarSafeEl=document.getElementById("calendarSafeToSpend");
   const calendarSafeLabel=document.getElementById("calendarSafeLabel");
