@@ -74,7 +74,7 @@
   <p class="small-note" data-period-label style="font-weight:900;letter-spacing:.08em;text-transform:uppercase">Until next payday</p>
   <div style="padding:8px 0 12px">
     <div id="safeToSpend" style="font-size:2.8rem;line-height:1.05;font-weight:950;color:#2f7d50">$0.00</div>
-    <p class="small-note">EXTRA SAFE TO SPEND RIGHT NOW</p>
+    <p class="small-note">TOTAL AVAILABLE TO SPEND RIGHT NOW (INCLUDING EVERYDAY ALLOWANCE)</p>
   </div>
   <div class="summary-row">
     <div class="summary-box"><span>Everyday allowance left this USPS pay period</span><strong id="everydayAllowanceLeft">$400.00</strong></div>
@@ -96,7 +96,7 @@
     <h3>Upcoming bills to protect</h3>
     <ul class="mini-list" id="protectedBillsList"><li><span>—</span><span>Loading bills</span><strong>—</strong></li></ul>
   </div>
-  <p class="small-note">The amount above is extra money for gifts and other purchases after protecting future bills and your current $400 USPS paycheck allowance. Your everyday allowance resets to $400 on your next USPS payday. Future paycheck allowances are not counted until those paydays arrive.</p>
+  <p class="small-note">The amount above includes both your remaining $400 everyday allowance for this USPS pay period and extra money that is safe after protecting future bills. Subtract gas, groceries, and everyday purchases using the Everyday option; that reduces the allowance and the total available amount. Extra purchases reduce the extra portion. Your allowance resets to $400 on your next USPS payday.</p>
 </section>
 
 
@@ -387,7 +387,8 @@ function renderSpendingOverview(){
   const events=getCashFlowEvents(today,forecast.end);
   const reserve=Math.max(0,forecast.startingBalance-safeToSpend);
   const safeEl=document.getElementById("safeToSpend"),cashEl=document.getElementById("cashAvailableNow"),reserveEl=document.getElementById("reservedForBills");
-  if(safeEl)safeEl.textContent=formatMoney(safeToSpend);
+  const totalAvailableToSpend=safeToSpend+forecast.allowance.remaining;
+  if(safeEl)safeEl.textContent=formatMoney(totalAvailableToSpend);
   const allowanceEl=document.getElementById("everydayAllowanceLeft");if(allowanceEl)allowanceEl.textContent=formatMoney(forecast.allowance.remaining);
   const safeCaption=document.querySelector("#spendingOverview .small-note");
   if(safeCaption){
@@ -397,7 +398,7 @@ function renderSpendingOverview(){
       : `Safe amount today after protecting all scheduled bills through ${formatShortDate(forecast.end)}.`;
   }
   const periodLabel=document.querySelector("#spendingOverview [data-period-label]");
-  if(periodLabel)periodLabel.textContent=`EXTRA SAFE TO SPEND TODAY · 4-MONTH FORECAST`;
+  if(periodLabel)periodLabel.textContent=`AVAILABLE TO SPEND · 4-MONTH BILL CHECK`;
   if(cashEl)cashEl.textContent=formatMoney(forecast.projectedBalance);
   if(reserveEl)reserveEl.textContent=formatMoney(reserve);
   const calendarSafeEl=document.getElementById("calendarSafeToSpend");
@@ -405,7 +406,7 @@ function renderSpendingOverview(){
   const selectedDate=dateFromKey(selectedDateKey||dateKey(today));
   const selectedIsToday=dateKey(selectedDate)===dateKey(today);
   const selectedSafe=selectedIsToday?safeToSpend:calculateSafeToSpendOn(selectedDate);
-  if(calendarSafeEl)calendarSafeEl.textContent=selectedDate<today?"—":formatMoney(selectedSafe);
+  if(calendarSafeEl)calendarSafeEl.textContent=selectedDate<today?"—":formatMoney(selectedSafe+(selectedIsToday?forecast.allowance.remaining:getEverydayAllowance(selectedDate).remaining));
   if(calendarSafeLabel)calendarSafeLabel.textContent=selectedIsToday?"Available to spend right now":`Available to spend on ${formatShortDate(selectedDate)}`;
   const recent=document.getElementById("recentSpendingList");
   if(recent)recent.innerHTML=spendingHistory.slice(0,4).map(item=>`<li><span>${formatShortDate(dateFromKey(item.date))}</span><span>Purchase recorded</span><strong>−${formatMoney(item.amount)}</strong></li>`).join("");
