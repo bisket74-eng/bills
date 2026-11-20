@@ -441,7 +441,7 @@ function getCashFlowEvents(startDate,endDate){
     cursor=new Date(y,m+1,1);
   }
   // Extra purchases are recorded as dated forecast expenses, without changing the original starting balance.
-  spendingHistory.filter(item=>item.forecastAdjustment===true).forEach(item=>{
+  spendingHistory.forEach(item=>{
     const date=dateFromKey(item.date);
     if(date>=start&&date<end)events.push({date,type:"expense",name:"Extra purchase",amount:Number(item.amount)||0,account:"Household"});
   });
@@ -466,9 +466,10 @@ function getCashBalanceThrough(date,inclusive=true){
   let balance=(Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0);
   if(cutoff>addDays(asOf,1)){
     const eventStart=addDays(asOf,1);
-    // Apply every event, including extra purchases, exactly once after the starting-balance date.
     getCashFlowEvents(eventStart,cutoff).forEach(e=>balance+=e.type==="income"?e.amount:-e.amount);
   }
+  // Also include purchases on the starting-balance date, which are outside the event window above.
+  spendingHistory.filter(item=>startOfDay(dateFromKey(item.date)).getTime()===asOf.getTime()).forEach(item=>balance-=Number(item.amount)||0);
   return balance;
 }
 function renderCalendar(){
