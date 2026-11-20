@@ -178,7 +178,7 @@ let bills=loadBills(), settings=loadSettings();
 let paidOccurrences=loadPaidOccurrences();
 const PAYMENT_DATES_KEY="billTracker.paymentDates.v1";
 let paymentDateOverrides=loadPaymentDateOverrides();
-let spendingHistory=loadSpendingHistory();
+let spendingHistory=[];
 
 function startOfDay(date){return new Date(date.getFullYear(),date.getMonth(),date.getDate())}
 function dateKey(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`}
@@ -201,18 +201,21 @@ function savePaidOccurrences(){localStorage.setItem(PAID_STORAGE_KEY,JSON.string
 function loadPaymentDateOverrides(){try{const data=JSON.parse(localStorage.getItem(PAYMENT_DATES_KEY)||"{}");return data&&typeof data==="object"&&!Array.isArray(data)?data:{}}catch(e){return{}}}
 function savePaymentDateOverrides(){localStorage.setItem(PAYMENT_DATES_KEY,JSON.stringify(paymentDateOverrides))}
 const SPENDING_STORAGE_KEY="billTracker.spending.v1";
-function loadSpendingHistory(){try{const data=JSON.parse(localStorage.getItem(SPENDING_STORAGE_KEY)||"[]");return Array.isArray(data)?data.filter(item=>item&&item.date&&Number(item.amount)>0):[]}catch(e){return[]}}
-function saveSpendingHistory(){const serialized=JSON.stringify(spendingHistory);localStorage.setItem(SPENDING_STORAGE_KEY,serialized);const check=localStorage.getItem(SPENDING_STORAGE_KEY);if(check!==serialized)throw new Error("Saved purchase records could not be verified on this device.")}
-function recordSpending(){
+const PURCHASE_DB_NAME="MyBillsPurchases",PURCHASE_DB_STORE="transactions";
+function openPurchaseDB(){return new Promise((resolve,reject)=>{if(!("indexedDB"in window)){reject(new Error("This browser does not support the larger purchase storage."));return}const request=indexedDB.open(PURCHASE_DB_NAME,1);request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(PURCHASE_DB_STORE))db.createObjectStore(PURCHASE_DB_STORE,{keyPath:"id"})};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error||new Error("Could not open purchase storage."))})}
+function readPurchaseDB(){return openPurchaseDB().then(db=>new Promise((resolve,reject)=>{const tx=db.transaction(PURCHASE_DB_STORE,"readonly"),request=tx.objectStore(PURCHASE_DB_STORE).getAll();request.onsuccess=()=>resolve(request.result||[]);request.onerror=()=>reject(request.error);tx.oncomplete=()=>db.close();tx.onerror=()=>{db.close();reject(tx.error)}}))}
+function writePurchaseDB(entries){return openPurchaseDB().then(db=>new Promise((resolve,reject)=>{const tx=db.transaction(PURCHASE_DB_STORE,"readwrite"),store=tx.objectStore(PURCHASE_DB_STORE);store.clear();entries.forEach(entry=>store.put(entry));tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error||new Error("Could not save purchase records."))};tx.onabort=()=>{db.close();reject(tx.error||new Error("Purchase save was cancelled."))}}))}
+async function loadSpendingHistory(){let entries=await readPurchaseDB();if(entries.length)return entries.sort((a,b)=>(b.time||"").localeCompare(a.time||""));try{const legacy=JSON.parse(localStorage.getItem(SPENDING_STORAGE_KEY)||"[]");if(Array.isArray(legacy)&&legacy.length){entries=legacy.filter(item=>item&&item.date&&Number(item.amount)>0).map(item=>({...item,id:item.id||makeId(),forecastAdjustment:true}));await writePurchaseDB(entries);return entries}}catch(e){}return[]}
+function saveSpendingHistory(){return writePurchaseDB(spendingHistory)}
+async function recordSpending(){
   const amount=Number(document.getElementById("spendAmount").value);
   const status=document.getElementById("spendStatus");
   if(!Number.isFinite(amount)||amount<=0){status.textContent="Enter an amount greater than zero.";return}
   const entry={id:makeId(),amount,date:dateKey(today),time:new Date().toISOString(),forecastAdjustment:true};
-  spendingHistory.unshift(entry);
-  try{saveSpendingHistory()}catch(error){spendingHistory=spendingHistory.filter(item=>item.id!==entry.id);status.textContent="Could not save this purchase on this device. No deduction was recorded. "+error.message;return}
+  spendingHistory.unshift(entry);status.textContent="Saving purchase…";
+  try{await saveSpendingHistory()}catch(error){spendingHistory=spendingHistory.filter(item=>item.id!==entry.id);status.textContent="Could not save this purchase. No deduction was recorded. "+(error.message||"Storage unavailable.");return}
   document.getElementById("spendAmount").value="";
-  status.textContent=formatMoney(amount)+" saved. "+spendingHistory.length+" purchase record(s) are stored on this device."; 
-  render();
+  status.textContent=formatMoney(amount)+" saved. "+spendingHistory.length+" purchase record(s) saved.";render();
 }
 function occurrenceKey(bill,dueDate){return `${bill.id}::${dateKey(dueDate)}`}
 function isOccurrencePaid(bill,dueDate){return !!paidOccurrences[occurrenceKey(bill,dueDate)]}
@@ -397,7 +400,7 @@ function renderSpendingOverview(){
   if(calendarSafeEl)calendarSafeEl.textContent=selectedDate<today?"—":formatMoney(selectedSafe+(selectedIsToday?forecast.allowance.remaining:getEverydayAllowance(selectedDate).remaining));
   if(calendarSafeLabel)calendarSafeLabel.textContent=selectedIsToday?"Available to spend right now":`Available to spend on ${formatShortDate(selectedDate)}`;
   const recent=document.getElementById("recentSpendingList");
-  if(recent){const entries=spendingHistory.map((item,index)=>({item,index}));recent.innerHTML=entries.length?entries.map(({item,index})=>`<li style="display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center"><span>${formatShortDate(dateFromKey(item.date))} · Extra purchase</span><strong>−${formatMoney(item.amount)}</strong>${item.time?`<span class="small-note" style="grid-column:1/-1">${new Date(item.time).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}</span>`:""}<button type="button" class="secondary-btn" data-remove-spend="${index}" style="grid-column:1/-1;justify-self:start;padding:5px 10px;font-size:.8rem">Remove this entry</button></li>`).join(""):`<li><span>No extra purchases recorded</span></li>`;recent.querySelectorAll("[data-remove-spend]").forEach(button=>button.addEventListener("click",()=>{const index=Number(button.dataset.removeSpend);if(!Number.isInteger(index)||!spendingHistory[index])return;spendingHistory.splice(index,1);saveSpendingHistory();render()}));}
+  if(recent){const entries=spendingHistory.map((item,index)=>({item,index}));recent.innerHTML=entries.length?entries.map(({item,index})=>`<li style="display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center"><span>${formatShortDate(dateFromKey(item.date))} · Extra purchase</span><strong>−${formatMoney(item.amount)}</strong>${item.time?`<span class="small-note" style="grid-column:1/-1">${new Date(item.time).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}</span>`:""}<button type="button" class="secondary-btn" data-remove-spend="${index}" style="grid-column:1/-1;justify-self:start;padding:5px 10px;font-size:.8rem">Remove this entry</button></li>`).join(""):`<li><span>No extra purchases recorded</span></li>`;recent.querySelectorAll("[data-remove-spend]").forEach(button=>button.addEventListener("click",async()=>{const index=Number(button.dataset.removeSpend);if(!Number.isInteger(index)||!spendingHistory[index])return;const removed=spendingHistory.splice(index,1)[0];try{await saveSpendingHistory();render()}catch(error){spendingHistory.splice(index,0,removed);document.getElementById("spendStatus").textContent="Could not remove that purchase: "+error.message;render()}}));}
   const list=document.getElementById("protectedBillsList");
   if(list){
     const upcoming=events.filter(e=>e.type==="expense").slice(0,6);
@@ -582,7 +585,7 @@ els.billFrequency.addEventListener("change",()=>updateFrequencyMonthPicker());
 els.saveBillBtn.addEventListener("click",saveBillFromForm);els.cancelEditBtn.addEventListener("click",clearBillForm);els.saveSettingsBtn.addEventListener("click",saveSettingsFromForm);document.getElementById("recordSpendBtn").addEventListener("click",recordSpending);document.getElementById("spendAmount").addEventListener("keydown",event=>{if(event.key==="Enter")recordSpending()});els.exportBtn.addEventListener("click",exportBackup);
 els.importFile.addEventListener("change",event=>importBackup(event.target.files[0]));
 window.addEventListener("focus",checkForNewDay);document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkForNewDay()});setInterval(checkForNewDay,60*60*1000);
-fillFormOptions();fillSettingsForm();clearBillForm();render();
+fillFormOptions();fillSettingsForm();clearBillForm();render();loadSpendingHistory().then(entries=>{spendingHistory=entries;render()}).catch(error=>{const status=document.getElementById("spendStatus");if(status)status.textContent="Purchase history could not be loaded: "+error.message});
 if("serviceWorker"in navigator)window.addEventListener("load",()=>{navigator.serviceWorker.register("./service-worker.js").catch(()=>{})});
 </script>
 </body>
