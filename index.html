@@ -211,7 +211,7 @@ function recordSpending(){
   const totalAvailable=forecast.safeToSpend+forecast.allowance.remaining;
   if(amount>totalAvailable){status.textContent="That purchase is more than your total available spending money after protecting future bills.";return}
   spendingHistory.unshift({amount,date:dateKey(today),time:new Date().toISOString(),forecastAdjustment:true});
-  spendingHistory=spendingHistory.slice(0,12);saveSpendingHistory();
+  saveSpendingHistory();
   document.getElementById("spendAmount").value="";
   status.textContent=formatMoney(amount)+" recorded as an extra expense today and subtracted from your projected available money.";
   render();
