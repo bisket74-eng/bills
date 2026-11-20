@@ -200,20 +200,19 @@ function loadPaidOccurrences(){try{const saved=JSON.parse(localStorage.getItem(P
 function savePaidOccurrences(){localStorage.setItem(PAID_STORAGE_KEY,JSON.stringify(paidOccurrences))}
 function loadPaymentDateOverrides(){try{const data=JSON.parse(localStorage.getItem(PAYMENT_DATES_KEY)||"{}");return data&&typeof data==="object"&&!Array.isArray(data)?data:{}}catch(e){return{}}}
 function savePaymentDateOverrides(){localStorage.setItem(PAYMENT_DATES_KEY,JSON.stringify(paymentDateOverrides))}
-const SPENDING_STORAGE_KEY="billTracker.spending.v1";
-function loadSpendingHistory(){try{const data=JSON.parse(localStorage.getItem(SPENDING_STORAGE_KEY)||"[]");return Array.isArray(data)?data:[]}catch(e){return[]}}
-function saveSpendingHistory(){localStorage.setItem(SPENDING_STORAGE_KEY,JSON.stringify(spendingHistory))}
+const SPENDING_STORAGE_KEY="billTracker.transactions.v2";
+const LEGACY_SPENDING_STORAGE_KEY="billTracker.spending.v1";
+function loadSpendingHistory(){try{const current=localStorage.getItem(SPENDING_STORAGE_KEY);const raw=current===null?localStorage.getItem(LEGACY_SPENDING_STORAGE_KEY):current;const data=JSON.parse(raw||"[]");return Array.isArray(data)?data.filter(item=>item&&item.date&&Number(item.amount)>0):[]}catch(e){return[]}}
+function saveSpendingHistory(){const serialized=JSON.stringify(spendingHistory);localStorage.setItem(SPENDING_STORAGE_KEY,serialized);const check=localStorage.getItem(SPENDING_STORAGE_KEY);if(check!==serialized)throw new Error("Saved purchase records could not be verified on this device.");localStorage.setItem(LEGACY_SPENDING_STORAGE_KEY,serialized)}
 function recordSpending(){
   const amount=Number(document.getElementById("spendAmount").value);
   const status=document.getElementById("spendStatus");
   if(!Number.isFinite(amount)||amount<=0){status.textContent="Enter an amount greater than zero.";return}
-  const forecast=getFourMonthSpendingForecast(today);
-  const totalAvailable=forecast.safeToSpend+forecast.allowance.remaining;
-  if(amount>totalAvailable){status.textContent="That purchase is more than your total available spending money after protecting future bills.";return}
-  spendingHistory.unshift({amount,date:dateKey(today),time:new Date().toISOString(),forecastAdjustment:true});
-  saveSpendingHistory();
+  const entry={id:makeId(),amount,date:dateKey(today),time:new Date().toISOString(),forecastAdjustment:true};
+  spendingHistory.unshift(entry);
+  try{saveSpendingHistory()}catch(error){spendingHistory=spendingHistory.filter(item=>item.id!==entry.id);status.textContent="Could not save this purchase on this device. No deduction was recorded. "+error.message;return}
   document.getElementById("spendAmount").value="";
-  status.textContent=formatMoney(amount)+" recorded as an extra expense today and subtracted from your projected available money.";
+  status.textContent=formatMoney(amount)+" saved. "+spendingHistory.length+" purchase record(s) are stored on this device."; 
   render();
 }
 function occurrenceKey(bill,dueDate){return `${bill.id}::${dateKey(dueDate)}`}
