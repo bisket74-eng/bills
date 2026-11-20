@@ -88,7 +88,7 @@
       <button id="recordSpendBtn" type="button" class="primary-btn">Subtract</button>
     </div>
     <p id="spendStatus" class="small-note" aria-live="polite"></p>
-    <ul class="mini-list" id="recentSpendingList"></ul>
+    <h4 style="margin:14px 0 6px">Recorded extra purchases</h4><p class="small-note">Each entry is counted once in your projected balance. You can remove an accidental duplicate here.</p><ul class="mini-list" id="recentSpendingList"><li><span>No extra purchases recorded</span></li></ul>
   </div>
   <div class="selected-day-box">
     <h3>Upcoming bills to protect</h3>
@@ -399,7 +399,7 @@ function renderSpendingOverview(){
   if(calendarSafeEl)calendarSafeEl.textContent=selectedDate<today?"—":formatMoney(selectedSafe+(selectedIsToday?forecast.allowance.remaining:getEverydayAllowance(selectedDate).remaining));
   if(calendarSafeLabel)calendarSafeLabel.textContent=selectedIsToday?"Available to spend right now":`Available to spend on ${formatShortDate(selectedDate)}`;
   const recent=document.getElementById("recentSpendingList");
-  if(recent)recent.innerHTML=spendingHistory.slice(0,4).map(item=>`<li><span>${formatShortDate(dateFromKey(item.date))}</span><span>Purchase recorded</span><strong>−${formatMoney(item.amount)}</strong></li>`).join("");
+  if(recent){const entries=spendingHistory.map((item,index)=>({item,index})).filter(({item})=>item.forecastAdjustment===true);recent.innerHTML=entries.length?entries.map(({item,index})=>`<li style="display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center"><span>${formatShortDate(dateFromKey(item.date))} · Extra purchase</span><strong>−${formatMoney(item.amount)}</strong>${item.time?`<span class="small-note" style="grid-column:1/-1">${new Date(item.time).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}</span>`:""}<button type="button" class="secondary-btn" data-remove-spend="${index}" style="grid-column:1/-1;justify-self:start;padding:5px 10px;font-size:.8rem">Remove this entry</button></li>`).join(""):`<li><span>No extra purchases recorded</span></li>`;recent.querySelectorAll("[data-remove-spend]").forEach(button=>button.addEventListener("click",()=>{const index=Number(button.dataset.removeSpend);if(!Number.isInteger(index)||!spendingHistory[index]||spendingHistory[index].forecastAdjustment!==true)return;spendingHistory.splice(index,1);saveSpendingHistory();render()}));}
   const list=document.getElementById("protectedBillsList");
   if(list){
     const upcoming=events.filter(e=>e.type==="expense").slice(0,6);
