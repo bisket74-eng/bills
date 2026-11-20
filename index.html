@@ -388,8 +388,8 @@ function renderSpendingOverview(){
   if(safeCaption){
     const limit=forecast.limitingEvent;
     safeCaption.textContent=limit
-      ? `Extra safe-to-spend today after protecting all scheduled bills and the current $400 paycheck allowance through ${formatShortDate(forecast.end)}. The tightest point is ${limit.name} on ${formatShortDate(limit.date)}.`
-      : `Safe amount today after protecting all scheduled bills through ${formatShortDate(forecast.end)}.`;
+      ? `This is your total safe-to-spend amount, INCLUDING your $400 cushion. The forecast counts scheduled paychecks, Tuesday deposits, family contributions, and bills through ${formatShortDate(forecast.end)}. The tightest point is ${limit.name} on ${formatShortDate(limit.date)}. Do not add another $400.`
+      : `This total includes your $400 cushion and protects scheduled income and bills through ${formatShortDate(forecast.end)}. Do not add another $400.`;
   }
   const periodLabel=document.querySelector("#spendingOverview [data-period-label]");
   if(periodLabel)periodLabel.textContent=`AVAILABLE TO SPEND · 4-MONTH BILL CHECK`;
