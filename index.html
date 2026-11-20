@@ -466,12 +466,9 @@ function getCashBalanceThrough(date,inclusive=true){
   let balance=(Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0);
   if(cutoff>addDays(asOf,1)){
     const eventStart=addDays(asOf,1);
-    getCashFlowEvents(eventStart,cutoff).filter(e=>e.name!=="Extra purchase").forEach(e=>balance+=e.type==="income"?e.amount:-e.amount);
+    // Apply every event, including extra purchases, exactly once after the starting-balance date.
+    getCashFlowEvents(eventStart,cutoff).forEach(e=>balance+=e.type==="income"?e.amount:-e.amount);
   }
-  spendingHistory.filter(item=>item.forecastAdjustment===true).forEach(item=>{
-    const purchaseDate=startOfDay(dateFromKey(item.date));
-    if(purchaseDate<=target&&purchaseDate>=asOf)balance-=Number(item.amount)||0;
-  });
   return balance;
 }
 function renderCalendar(){
