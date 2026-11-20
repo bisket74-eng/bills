@@ -68,7 +68,7 @@
 </head>
 <body>
 <main class="app">
-<header class="top-header"><h1>My Bills</h1><p id="todayLine">Your monthly bills and paycheck plan</p></header>
+<header class="top-header"><h1>My Bills</h1><p id="todayLine">Your monthly bills and paycheck plan</p><button type="button" id="openSetupBtn" class="btn btn-primary" style="margin-top:10px">⚙ Setup &amp; Manage Bills</button></header>
 
 <section class="card card-next" id="spendingOverview">
   <p class="small-note" style="font-weight:900;letter-spacing:.08em;text-transform:uppercase">Available after protecting bills</p>
@@ -129,7 +129,7 @@
 
 
 
-<section class="card card-bills">
+<section class="card" id="setupPanel" style="display:none"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 class="section-title">Setup &amp; Manage</h2><button type="button" id="closeSetupBtn" class="btn">Close</button></div><p class="small-note">Your bill list, recurring bill setup, automatic deposit schedule, account balances, and backup tools are here.</p><section class="card card-bills">
   <h2 class="section-title">Bills <span class="pill" id="billCountPill">0 bills</span></h2>
   <div id="billList"></div>
 </section>
@@ -163,7 +163,7 @@
   <p class="small-note">Export saves your bills and paycheck setup to a file. Import restores them on this device.</p>
   <div class="btn-row"><button class="btn btn-yellow" id="exportBtn" type="button">Export Backup</button><label class="btn btn-blue" for="importFile">Import Backup</label><input class="hide" id="importFile" type="file" accept="application/json,.json" /></div>
   <div class="backup-box"><p class="small-note" id="backupStatus">No backup action yet.</p></div>
-</section>
+</section></section>
 </main>
 
 <script>
@@ -510,6 +510,8 @@ function escapeHtml(value){return String(value).replaceAll("&","&amp;").replaceA
 function checkForNewDay(){const current=startOfDay(new Date());if(dateKey(current)!==dateKey(today)){today=current;selectedDateKey=dateKey(today);visibleMonth=new Date(today.getFullYear(),today.getMonth(),1);render()}}
 els.prevMonthBtn.addEventListener("click",()=>{visibleMonth=new Date(visibleMonth.getFullYear(),visibleMonth.getMonth()-1,1);renderCalendar();renderSelectedDay()});
 els.nextMonthBtn.addEventListener("click",()=>{visibleMonth=new Date(visibleMonth.getFullYear(),visibleMonth.getMonth()+1,1);renderCalendar();renderSelectedDay()});
+document.getElementById("openSetupBtn").addEventListener("click",()=>{document.getElementById("setupPanel").style.display="block";document.getElementById("setupPanel").scrollIntoView({behavior:"smooth",block:"start"})});
+document.getElementById("closeSetupBtn").addEventListener("click",()=>{document.getElementById("setupPanel").style.display="none";document.getElementById("openSetupBtn").scrollIntoView({behavior:"smooth",block:"center"})});
 document.getElementById("toggleDailyLedger").addEventListener("click",()=>{const panel=document.getElementById("dailyMoneyLedger"),button=document.getElementById("toggleDailyLedger"),opening=panel.style.display==="none";panel.style.display=opening?"block":"none";button.textContent=opening?"Hide daily money list":"Show daily money list";if(opening)renderDailyMoneyLedger()});
 els.billFrequency.addEventListener("change",()=>updateFrequencyMonthPicker());
 els.saveBillBtn.addEventListener("click",saveBillFromForm);els.cancelEditBtn.addEventListener("click",clearBillForm);els.saveSettingsBtn.addEventListener("click",saveSettingsFromForm);document.getElementById("recordSpendBtn").addEventListener("click",recordSpending);document.getElementById("spendAmount").addEventListener("keydown",event=>{if(event.key==="Enter")recordSpending()});els.exportBtn.addEventListener("click",exportBackup);
