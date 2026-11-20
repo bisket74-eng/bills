@@ -413,16 +413,9 @@ function renderSelectedDay(){
   }else html+=`<p class="small-note">No scheduled income or bills on this day.</p>`;
   if(date>=today){
     const balance=getCashBalanceThrough(date);
-    const horizon=addDays(date,120);
-    let projected=balance,minProjected=balance;
-    getCashFlowEvents(addDays(date,1),horizon).forEach(event=>{
-      projected+=event.type==="income"?Number(event.amount||0):-Number(event.amount||0);
-      minProjected=Math.min(minProjected,projected);
-    });
-    const safeOnDate=Math.max(0,Math.min(balance,minProjected));
-    html+=`<div class="summary-row"><div class="summary-box"><span>Projected money after ${formatShortDate(date)}</span><strong>${formatMoney(balance)}</strong></div><div class="summary-box"><span>Safe to spend on ${formatShortDate(date)}</span><strong class="money-left">${formatMoney(safeOnDate)}</strong></div></div><p class="small-note">This assumes no additional purchases beyond the spending already recorded. It protects bills using scheduled income over the following four months.</p>`;
+    html+=`<div class="selected-day-box" style="margin-top:12px"><p class="small-note" style="font-weight:900;margin:0 0 5px">MONEY AVAILABLE IF YOU MAKE NO EXTRA PURCHASES</p><strong style="display:block;font-size:2rem;line-height:1.15;color:#2f7d50">${formatMoney(balance)}</strong><p class="small-note">This is your projected combined balance after all income and bills through ${formatShortDate(date)}. It assumes no extra spending beyond purchases you have already subtracted.</p></div>`;
   }else html+=`<p class="small-note">Your starting balance is set as of today, so earlier dates do not have a calculated balance.</p>`;
-  html+=`<p class="small-note">This projection includes scheduled income and listed bills. Add groceries, gas, and other spending as bills/expenses to keep it accurate.</p>`;
+  html+=`<p class="small-note">This projection includes scheduled income and listed bills. Use “Subtract a purchase” to record groceries, gas, or anything else you spend; future calendar balances will then decrease accordingly.</p>`;
   els.selectedDayBox.innerHTML=html;
 }
 function buildBasicCalendarCheck(payDate){const nextDate=estimateNextPayDate(payDate),periodBills=getBillOccurrencesBetween(payDate,nextDate);return{date:payDate,nextDate,bills:periodBills,billTotal:periodBills.reduce((sum,b)=>sum+Number(b.amount||0),0)}}
