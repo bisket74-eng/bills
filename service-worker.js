@@ -1,4 +1,4 @@
-const CACHE_NAME = "my-bills-cache-v43";
+const CACHE_NAME = "my-bills-cache-v44";
 
 const FILES_TO_CACHE = [
   "./",
