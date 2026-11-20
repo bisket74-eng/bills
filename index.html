@@ -77,8 +77,8 @@
     <p class="small-note">SAFE TO SPEND RIGHT NOW</p>
   </div>
   <div class="summary-row">
-    <div class="summary-box"><span>Projected balance after bills and paycheck allowances</span><strong id="cashAvailableNow">$160.00</strong></div>
-    <div class="summary-box"><span>Protected for future bills and paycheck allowances</span><strong id="reservedForBills">$0.00</strong></div>
+    <div class="summary-box"><span>Projected balance after today's scheduled activity</span><strong id="cashAvailableNow">$160.00</strong></div>
+    <div class="summary-box"><span>Protected for future bills</span><strong id="reservedForBills">$0.00</strong></div>
   </div>
   <div class="selected-day-box" style="margin-top:14px">
     <h3>Subtract a purchase</h3>
@@ -94,7 +94,7 @@
     <h3>Upcoming bills to protect</h3>
     <ul class="mini-list" id="protectedBillsList"><li><span>—</span><span>Loading bills</span><strong>—</strong></li></ul>
   </div>
-  <p class="small-note">This is the amount you can spend today while keeping every scheduled bill covered and reserving $400 from each of your USPS paychecks for gas, groceries, and everyday spending. The forecast rolls forward four months automatically. The Tuesday $200 deposit is part of your USPS paycheck, not a separate allowance.</p>
+  <p class="small-note">This is the amount you can spend today while keeping every scheduled bill covered over the next four months. It includes money for groceries, gas, everyday expenses, and extras. The forecast rolls forward automatically.</p>
 </section>
 
 
@@ -328,33 +328,13 @@ function getFourMonthSpendingForecast(fromDate=today){
   const start=startOfDay(fromDate);
   const monthAfter=start.getMonth()+4;
   const end=new Date(start.getFullYear()+Math.floor(monthAfter/12),monthAfter%12,Math.min(start.getDate(),new Date(start.getFullYear()+Math.floor(monthAfter/12),monthAfter%12,0).getDate()));
-  // Begin with the projected balance AFTER all deposits and bills on the
-  // selected date. This is essential on payday: today's income is spendable.
-  const cashAfterScheduledActivity=getCashBalanceThrough(start);
-  // Carry forward the $400 protections from every USPS payday since today,
-  // including the selected date if it is a payday.
-  let reservedPaychecks=0;
-  let month=new Date(today.getFullYear(),today.getMonth()-1,1);
-  while(month<=start){
-    getPayDatesForCalendar(month.getFullYear(),month.getMonth()).forEach(payday=>{
-      if(payday>=today&&payday<=start)reservedPaychecks++;
-    });
-    month=new Date(month.getFullYear(),month.getMonth()+1,1);
-  }
-  const startingBalance=cashAfterScheduledActivity-reservedPaychecks*400;
+  // Start with the real projected account balance after all activity on
+  // the selected date. Do not deduct a separate $400 allowance.
+  const startingBalance=getCashBalanceThrough(start);
   const events=getCashFlowEvents(addDays(start,1),end);
-  // Reserve another $400 for each USPS payday after the selected date.
-  // Tuesday's $200 is part of that same biweekly paycheck.
-  month=new Date(start.getFullYear(),start.getMonth()-1,1);
-  while(month<end){
-    getPayDatesForCalendar(month.getFullYear(),month.getMonth()).forEach(payday=>{
-      if(payday>start&&payday<end)events.push({date:payday,type:"reserve",name:"USPS paycheck everyday allowance",amount:400});
-    });
-    month=new Date(month.getFullYear(),month.getMonth()+1,1);
-  }
-  const priority=e=>e.type==="income"?0:e.type==="expense"?1:2;
+  const priority=e=>e.type==="income"?0:1;
   events.sort((a,b)=>a.date-b.date||priority(a)-priority(b));
-  let projected=startingBalance,minimum=startingBalance,limitingEvent=reservedPaychecks?{date:start,type:"reserve",name:"USPS paycheck everyday allowance",amount:reservedPaychecks*400}:null;
+  let projected=startingBalance,minimum=startingBalance,limitingEvent=null;
   events.forEach(event=>{
     projected+=event.type==="income"?Number(event.amount||0):-Number(event.amount||0);
     if(projected<minimum){minimum=projected;limitingEvent=event;}
@@ -378,8 +358,8 @@ function renderSpendingOverview(){
   if(safeCaption){
     const limit=forecast.limitingEvent;
     safeCaption.textContent=limit
-      ? `Safe amount today after protecting all scheduled bills and $400 from each USPS paycheck through ${formatShortDate(forecast.end)}. The tightest point is ${limit.name} on ${formatShortDate(limit.date)}.`
-      : `Safe amount today after protecting all scheduled bills and $400 from each USPS paycheck through ${formatShortDate(forecast.end)}.`;
+      ? `Safe amount today after protecting all scheduled bills through ${formatShortDate(forecast.end)}. The tightest point is ${limit.name} on ${formatShortDate(limit.date)}.`
+      : `Safe amount today after protecting all scheduled bills through ${formatShortDate(forecast.end)}.`;
   }
   const periodLabel=document.querySelector("#spendingOverview [data-period-label]");
   if(periodLabel)periodLabel.textContent=`Safe to spend today · 4-month forecast`;
