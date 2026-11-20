@@ -71,7 +71,7 @@
 <header class="top-header"><h1>My Bills</h1><p id="todayLine">Your monthly bills and paycheck plan</p><button type="button" id="openSetupBtn" class="btn btn-primary" style="margin-top:10px">⚙ Setup &amp; Manage Bills</button></header>
 
 <section class="card card-next" id="spendingOverview">
-  <p class="small-note" style="font-weight:900;letter-spacing:.08em;text-transform:uppercase">Available after protecting bills</p>
+  <p class="small-note" data-period-label style="font-weight:900;letter-spacing:.08em;text-transform:uppercase">Until next payday</p>
   <div style="padding:8px 0 12px">
     <div id="safeToSpend" style="font-size:2.8rem;line-height:1.05;font-weight:950;color:#2f7d50">$0.00</div>
     <p class="small-note">SAFE TO SPEND RIGHT NOW</p>
@@ -313,6 +313,17 @@ function buildPaycheckPeriods(paychecks){const withBills=paychecks.map((check,in
 function estimateNextPayDate(date){if(settings.payFrequency==="weekly")return addDays(date,7);if(settings.payFrequency==="biweekly")return addDays(date,14);if(settings.payFrequency==="monthly")return addMonths(date,1);if(date.getDate()===1)return new Date(date.getFullYear(),date.getMonth(),15);return new Date(date.getFullYear(),date.getMonth()+1,1)}
 function applyCushionPlan(checks){const cushionTarget=getCushionTarget();checks.forEach(c=>{c.cushionFromPrevious=0;c.holdForNext=0;c.warning=0;c.leftAfterBills=(Number(c.amount)||0)-c.billTotal;c.finalLeft=c.leftAfterBills});for(let i=checks.length-1;i>=0;i--){const c=checks[i],amount=Number(c.amount)||0,leftAfterBillsAndSavingForNext=amount-c.billTotal-c.holdForNext,amountNeededFromPrevious=Math.max(0,cushionFromPreviousNeeded=cushionTarget-leftAfterBillsAndSavingForNext);if(amountNeededFromPrevious>0){if(i>0){c.cushionFromPrevious=amountNeededFromPrevious;checks[i-1].holdForNext+=amountNeededFromPrevious}else c.warning=amountNeededFromPrevious}}checks.forEach(c=>c.finalLeft=(Number(c.amount)||0)-c.billTotal+c.cushionFromPrevious-c.holdForNext);return checks}
 
+function findNextScheduledPayday(fromDate){
+  const start=addDays(startOfDay(fromDate),1),end=addDays(start,40);
+  let cursor=new Date(start.getFullYear(),start.getMonth(),1);
+  while(cursor<end){
+    const dates=getPayDatesForCalendar(cursor.getFullYear(),cursor.getMonth());
+    const next=dates.find(d=>d>=start);
+    if(next&&next<end)return startOfDay(next);
+    cursor=new Date(cursor.getFullYear(),cursor.getMonth()+1,1);
+  }
+  return end;
+}
 function calculateSafeToSpendOn(date){
   const selected=startOfDay(date);
   if(selected<today)return 0;
@@ -329,9 +340,18 @@ function renderSpendingOverview(){
   const currentCash=(Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0);
   const events=getCashFlowEvents(today,addDays(today,120));
   const safeToSpend=calculateSafeToSpendOn(today);
+  const nextPayday=findNextScheduledPayday(today);
+  const periodEvents=getCashFlowEvents(today,nextPayday);
+  const dueBeforePayday=periodEvents.filter(e=>e.type==="expense").reduce((sum,e)=>sum+Number(e.amount||0),0);
+  const depositsBeforePayday=periodEvents.filter(e=>e.type==="income").reduce((sum,e)=>sum+Number(e.amount||0),0);
+  const spendUntilPayday=Math.max(0,currentCash+depositsBeforePayday-dueBeforePayday);
   const reserve=Math.max(0,currentCash-safeToSpend);
   const safeEl=document.getElementById("safeToSpend"),cashEl=document.getElementById("cashAvailableNow"),reserveEl=document.getElementById("reservedForBills");
-  if(safeEl)safeEl.textContent=formatMoney(safeToSpend);
+  if(safeEl)safeEl.textContent=formatMoney(spendUntilPayday);
+  const safeCaption=document.querySelector("#spendingOverview .small-note");
+  if(safeCaption)safeCaption.textContent=`Total available to spend through ${formatShortDate(addDays(nextPayday,-1))}, after bills due before payday. Deposits scheduled before payday are included.`;
+  const periodLabel=document.querySelector("#spendingOverview [data-period-label]");
+  if(periodLabel)periodLabel.textContent=`Until next payday · ${formatShortDate(nextPayday)}`;
   if(cashEl)cashEl.textContent=formatMoney(currentCash);
   if(reserveEl)reserveEl.textContent=formatMoney(reserve);
   const calendarSafeEl=document.getElementById("calendarSafeToSpend");
