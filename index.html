@@ -74,7 +74,7 @@
   <p class="small-note" data-period-label style="font-weight:900;letter-spacing:.08em;text-transform:uppercase">Until next payday</p>
   <div style="padding:8px 0 12px">
     <div id="safeToSpend" style="font-size:2.8rem;line-height:1.05;font-weight:950;color:#2f7d50">$0.00</div>
-    <p class="small-note">SAFE TO SPEND RIGHT NOW</p>
+    <p class="small-note">EXTRA SAFE TO SPEND RIGHT NOW</p>
   </div>
   <div class="summary-row">
     <div class="summary-box"><span>Everyday allowance left this USPS pay period</span><strong id="everydayAllowanceLeft">$400.00</strong></div>
@@ -356,7 +356,7 @@ function getFourMonthSpendingForecast(fromDate=today){
   const end=new Date(start.getFullYear()+Math.floor(monthAfter/12),monthAfter%12,Math.min(start.getDate(),new Date(start.getFullYear()+Math.floor(monthAfter/12),monthAfter%12,0).getDate()));
   const allowance=getEverydayAllowance(start);
   // Protect only the current paycheck's remaining everyday allowance now.
-  const startingBalance=getCashBalanceThrough(start)-allowance.remaining;
+  const projectedBalance=getCashBalanceThrough(start);\n  const startingBalance=projectedBalance-allowance.remaining;
   const events=getCashFlowEvents(addDays(start,1),end);
   let month=new Date(start.getFullYear(),start.getMonth()-1,1);
   while(month<end){
@@ -372,7 +372,7 @@ function getFourMonthSpendingForecast(fromDate=today){
     projected+=event.type==="income"?Number(event.amount||0):-Number(event.amount||0);
     if(projected<minimum){minimum=projected;limitingEvent=event;}
   });
-  return{safeToSpend:Math.max(0,minimum),minimum,limitingEvent,end,events,startingBalance,allowance};
+  return{safeToSpend:Math.max(0,minimum),minimum,limitingEvent,end,events,startingBalance,projectedBalance,allowance};
 }
 function calculateSafeToSpendOn(date){
   const selected=startOfDay(date);
@@ -397,7 +397,7 @@ function renderSpendingOverview(){
   }
   const periodLabel=document.querySelector("#spendingOverview [data-period-label]");
   if(periodLabel)periodLabel.textContent=`EXTRA SAFE TO SPEND TODAY · 4-MONTH FORECAST`;
-  if(cashEl)cashEl.textContent=formatMoney(forecast.startingBalance);
+  if(cashEl)cashEl.textContent=formatMoney(forecast.projectedBalance);
   if(reserveEl)reserveEl.textContent=formatMoney(reserve);
   const calendarSafeEl=document.getElementById("calendarSafeToSpend");
   const calendarSafeLabel=document.getElementById("calendarSafeLabel");
