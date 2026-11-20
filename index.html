@@ -340,9 +340,10 @@ function loadEverydaySpending(){try{const data=JSON.parse(localStorage.getItem("
 let everydaySpending=loadEverydaySpending();
 function saveEverydaySpending(){localStorage.setItem("billTracker.everydaySpending.v1",JSON.stringify(everydaySpending))}
 function getEverydayAllowance(fromDate=today){
-  const payday=getCurrentUSPSPayday(fromDate),key=dateKey(payday);
-  const used=everydaySpending.filter(x=>x.payday===key).reduce((sum,x)=>sum+Number(x.amount||0),0);
-  return{payday,used,remaining:Math.max(0,400-used)};
+  // The $400 is one shared cushion inside the combined spending total.
+  // Purchases reduce account balances and therefore reduce that total;
+  // do not separately track or subtract purchases from this cushion.
+  return{payday:getCurrentUSPSPayday(fromDate),used:0,remaining:400};
 }
 function getFourMonthSpendingForecast(fromDate=today){
   const start=startOfDay(fromDate);
