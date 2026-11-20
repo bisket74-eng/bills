@@ -409,7 +409,7 @@ function renderSpendingOverview(){
     const upcoming=events.filter(e=>e.type==="expense").slice(0,6);
     list.innerHTML=upcoming.length?upcoming.map(e=>`<li><span>${formatShortDate(e.dueDate)}${e.date<today?" · overdue":""}</span><span>${escapeHtml(e.name)}</span><strong>${formatMoney(e.amount)}</strong><span style="grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--muted)">Pay this one on <input type="date" class="payment-date-input" data-payment-bill="${e.billId}" data-payment-due="${dateKey(e.dueDate)}" min="${dateKey(today)}" value="${dateKey(e.date)}" style="width:auto;flex:1;max-width:190px;padding:7px 9px;border-radius:10px;font-size:.85rem"><button type="button" class="btn btn-small btn-primary" data-mark-paid="${e.billId}" data-paid-due="${dateKey(e.dueDate)}">Paid</button></span></li>`).join(""):`<li><span>—</span><span>No listed bills in the next four months</span><strong>$0.00</strong></li>`;
     list.querySelectorAll("[data-payment-bill]").forEach(input=>input.addEventListener("change",()=>setOccurrencePaymentDate(input.dataset.paymentBill,input.dataset.paymentDue,input.value)));
-    list.querySelectorAll("[data-mark-paid]").forEach(button=>button.addEventListener("click",()=>{const key=`${button.dataset.markPaid}::${button.dataset.paidDue}`;if(paidOccurrences[key])return;const bill=bills.find(item=>item.id===button.dataset.markPaid);if(!bill)return;const amount=Number(bill.amount)||0;const current=(Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0);if(amount>current){document.getElementById("spendStatus").textContent="Not enough money is recorded in your accounts to mark this bill paid. Update your balances first.";return}if(!confirm(`Mark ${bill.name} (${formatMoney(amount)}) as paid? This will subtract it from your recorded account balance now.`))return;let remaining=amount,checking=Number(settings.checkingBalance)||0,other=Number(settings.otherBalance)||0;const fromChecking=Math.min(checking,remaining);checking-=fromChecking;remaining-=fromChecking;other=Math.max(0,other-remaining);settings.checkingBalance=checking;settings.otherBalance=other;saveSettings();if(els.checkingBalance)els.checkingBalance.value=checking.toFixed(2);if(els.otherBalance)els.otherBalance.value=other.toFixed(2);paidOccurrences[key]=dateKey(addDays(today,-1));savePaidOccurrences();delete paymentDateOverrides[key];savePaymentDateOverrides();document.getElementById("spendStatus").textContent=`${bill.name} marked paid and ${formatMoney(amount)} deducted from your balances.`;render()}));
+
   }
 }
 function renderMoneyOverview(){
@@ -444,13 +444,15 @@ function getCashFlowEvents(startDate,endDate){
     if(last>=start&&last<end)events.push({date:last,type:"income",name:"Daughter-in-law contribution",amount:845,account:"Household"});
     cursor=new Date(y,m+1,1);
   }
-  // Bills use their paid date when marked paid early; otherwise the due date.
+  // Bills are automatically deducted on their due date unless a planned date is selected.
   let month=new Date(start.getFullYear(),start.getMonth()-1,1);
   while(month<stop){
     bills.forEach(b=>{
       if(!billOccursInMonth(b,month.getFullYear(),month.getMonth()))return;
       const due=getBillDueDateInMonth(b,month.getFullYear(),month.getMonth());
-      const paid=getOccurrencePaidDate(b,due),planned=getOccurrencePaymentDate(b,due);let date=paid||planned||due;if(!paid&&!planned&&dateKey(start)===dateKey(today)&&due<start&&due>=new Date(start.getFullYear(),start.getMonth(),1))date=start;
+      const planned=getOccurrencePaymentDate(b,due);
+      let date=planned||due;
+      if(!planned&&date<start&&date>=new Date(start.getFullYear(),start.getMonth(),1))date=start;
       if(date>=start&&date<end)events.push({date,type:"expense",name:b.name,amount:Number(b.amount)||0,account:"Household",dueDate:due,billId:b.id});
     });
     month=new Date(month.getFullYear(),month.getMonth()+1,1);
@@ -520,12 +522,10 @@ function renderPaychecks(){
     if(check.bills.length){
       billHtml+=`<ul class="bill-lines">`;
       check.bills.forEach(b=>{
-        const paidClass=b.paidDate?" paid-line":"";
-        const paidLabel=b.paidEarly?`<span class="paid-early-tag">Paid early</span>`:"";
-        billHtml+=`<li class="bill-line${paidClass}">
+        billHtml+=`<li class="bill-line">
           <span class="bill-date-tag">${formatShortDate(b.dueDate)}</span>
-          <span class="bill-name-cell"><span>${escapeHtml(b.name)}</span>${paidLabel}</span>
-          <span class="bill-pay-cell"><strong>${formatMoney(b.amount)}</strong><label class="paid-check"><input type="checkbox" data-paid-bill="${b.id}" data-paid-due="${dateKey(b.dueDate)}" ${b.paidDate?"checked":""}><span>Paid</span></label></span>
+          <span class="bill-name-cell"><span>${escapeHtml(b.name)}</span></span>
+          <span class="bill-pay-cell"><strong>${formatMoney(b.amount)}</strong></span>
         </li>`
       });
       if(check.cushionFromPrevious>0)billHtml+=`<li class="cushion-line"><span>Use</span><span>Cushion</span><strong>+${formatMoney(check.cushionFromPrevious)}</strong></li>`;
