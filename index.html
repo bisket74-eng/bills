@@ -452,7 +452,6 @@ function getCashFlowEvents(startDate,endDate){
       const due=getBillDueDateInMonth(b,month.getFullYear(),month.getMonth());
       const planned=getOccurrencePaymentDate(b,due);
       let date=planned||due;
-      if(!planned&&date<start&&date>=new Date(start.getFullYear(),start.getMonth(),1))date=start;
       if(date>=start&&date<end)events.push({date,type:"expense",name:b.name,amount:Number(b.amount)||0,account:"Household",dueDate:due,billId:b.id});
     });
     month=new Date(month.getFullYear(),month.getMonth()+1,1);
