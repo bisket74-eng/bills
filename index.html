@@ -99,7 +99,7 @@
 
 
 <section class="card card-calendar">
-  <div class="calendar-head"><button class="cal-nav" id="prevMonthBtn" type="button">‹</button><h2 id="calendarTitle">Month Year</h2><button class="cal-nav" id="nextMonthBtn" type="button">›</button></div><div class="summary-row"><div class="summary-box" style="grid-column:1/-1"><span id="calendarSafeLabel">Available to spend right now</span><strong id="calendarSafeToSpend" style="font-size:1.65rem;color:#2f7d50">$0.00</strong><p class="small-note">Based on your current balances and upcoming bills, assuming no extra purchases.</p></div></div><p class="small-note">Green = money coming in. Red = bills going out. Balances combine checking and the separate account so either can be used for bills.</p>
+  <div class="calendar-head"><button class="cal-nav" id="prevMonthBtn" type="button">‹</button><h2 id="calendarTitle">Month Year</h2><button class="cal-nav" id="nextMonthBtn" type="button">›</button></div><button type="button" id="toggleDailyLedger" class="btn btn-primary" style="width:100%;margin:8px 0 14px">Show daily money list</button><section id="dailyMoneyLedger" class="selected-day-box" style="display:none;margin-bottom:14px"><h3>Daily money in and out</h3><p class="small-note">Starting with your current combined balance, each day adds scheduled deposits, subtracts bills, and shows the running total. Extra purchases are included after you subtract them.</p><div id="dailyMoneyLedgerRows"></div></section><div class="summary-row"><div class="summary-box" style="grid-column:1/-1"><span id="calendarSafeLabel">Available to spend right now</span><strong id="calendarSafeToSpend" style="font-size:1.65rem;color:#2f7d50">$0.00</strong><p class="small-note">Based on your current balances and upcoming bills, assuming no extra purchases.</p></div></div><p class="small-note">Green = money coming in. Red = bills going out. Balances combine checking and the separate account so either can be used for bills.</p>
   <div class="weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
   <div class="calendar-grid" id="calendarGrid"></div>
   <div class="selected-day-box" id="selectedDayBox"><h3>Select a day</h3><p class="small-note">Tap a bill day or payday to see what is due.</p></div>
@@ -361,7 +361,7 @@ function renderMoneyOverview(){
   document.getElementById("expensesMonthly").textContent=formatMoney(monthlyBills);
   document.getElementById("availableMonthly").textContent="Estimated remainder: "+formatMoney(remainder);
 }
-function render(){today=startOfDay(new Date());els.todayLine.textContent=formatLongDate(today);renderSpendingOverview();renderMoneyOverview();renderCalendar();renderBills();renderSelectedDay();renderSetupPreview()}
+function render(){today=startOfDay(new Date());els.todayLine.textContent=formatLongDate(today);renderSpendingOverview();renderMoneyOverview();renderCalendar();renderBills();renderSelectedDay();renderDailyMoneyLedger();renderSetupPreview()}
 function getCashFlowEvents(startDate,endDate){
   const events=[],start=startOfDay(startDate),end=startOfDay(endDate);
   // USPS paydays remain Friday; the $200 portion arrives Tuesday before payday.
@@ -414,6 +414,23 @@ function renderCalendar(){
     button.addEventListener("click",()=>{selectedDateKey=key;renderCalendar();renderSelectedDay();renderSpendingOverview()});els.calendarGrid.appendChild(button);
   }
 
+}
+function renderDailyMoneyLedger(){
+  const host=document.getElementById("dailyMoneyLedgerRows");
+  if(!host)return;
+  const start=startOfDay(today),end=addDays(start,121);
+  const events=getCashFlowEvents(start,end);
+  let balance=(Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0);
+  let html=`<div class="mini-list"><div style="display:flex;justify-content:space-between;gap:12px;padding:10px 4px;font-weight:900"><span>Today · Starting balance</span><strong>${formatMoney(balance)}</strong></div>`;
+  for(let day=new Date(start);day<end;day=addDays(day,1)){
+    const dayEvents=events.filter(e=>dateKey(e.date)===dateKey(day));
+    html+=`<div style="padding:12px 4px;border-top:1px solid rgba(100,120,110,.18)"><div style="font-weight:900;margin-bottom:6px">${formatLongDate(day)}</div>`;
+    if(dayEvents.length){
+      dayEvents.forEach(e=>{const amount=Number(e.amount)||0;balance+=e.type==="income"?amount:-amount;const sign=e.type==="income"?"+":"−",cls=e.type==="income"?"money-left":"money-out";html+=`<div style="display:flex;justify-content:space-between;gap:10px;padding:4px 0"><span>${sign} ${escapeHtml(e.name)}</span><strong class="${cls}" style="white-space:nowrap">${sign}${formatMoney(amount)}</strong></div>`;});
+    }else html+=`<div class="small-note">No scheduled money in or out</div>`;
+    html+=`<div style="display:flex;justify-content:space-between;gap:12px;border-top:1px dashed rgba(100,120,110,.25);padding-top:7px;margin-top:5px;font-weight:900"><span>End-of-day total</span><strong>${formatMoney(balance)}</strong></div></div>`;
+  }
+  host.innerHTML=html+`</div>`;
 }
 function renderSelectedDay(){
   const date=dateFromKey(selectedDateKey),events=getCashFlowEvents(date,addDays(date,1));
@@ -492,6 +509,7 @@ function escapeHtml(value){return String(value).replaceAll("&","&amp;").replaceA
 function checkForNewDay(){const current=startOfDay(new Date());if(dateKey(current)!==dateKey(today)){today=current;selectedDateKey=dateKey(today);visibleMonth=new Date(today.getFullYear(),today.getMonth(),1);render()}}
 els.prevMonthBtn.addEventListener("click",()=>{visibleMonth=new Date(visibleMonth.getFullYear(),visibleMonth.getMonth()-1,1);renderCalendar();renderSelectedDay()});
 els.nextMonthBtn.addEventListener("click",()=>{visibleMonth=new Date(visibleMonth.getFullYear(),visibleMonth.getMonth()+1,1);renderCalendar();renderSelectedDay()});
+document.getElementById("toggleDailyLedger").addEventListener("click",()=>{const panel=document.getElementById("dailyMoneyLedger"),button=document.getElementById("toggleDailyLedger"),opening=panel.style.display==="none";panel.style.display=opening?"block":"none";button.textContent=opening?"Hide daily money list":"Show daily money list";if(opening)renderDailyMoneyLedger()});
 els.billFrequency.addEventListener("change",()=>updateFrequencyMonthPicker());
 els.saveBillBtn.addEventListener("click",saveBillFromForm);els.cancelEditBtn.addEventListener("click",clearBillForm);els.saveSettingsBtn.addEventListener("click",saveSettingsFromForm);document.getElementById("recordSpendBtn").addEventListener("click",recordSpending);document.getElementById("spendAmount").addEventListener("keydown",event=>{if(event.key==="Enter")recordSpending()});els.exportBtn.addEventListener("click",exportBackup);
 els.importFile.addEventListener("change",event=>importBackup(event.target.files[0]));
