@@ -399,7 +399,7 @@ function renderSpendingOverview(){
   if(calendarSafeEl)calendarSafeEl.textContent=selectedDate<today?"—":formatMoney(selectedSafe+(selectedIsToday?forecast.allowance.remaining:getEverydayAllowance(selectedDate).remaining));
   if(calendarSafeLabel)calendarSafeLabel.textContent=selectedIsToday?"Available to spend right now":`Available to spend on ${formatShortDate(selectedDate)}`;
   const recent=document.getElementById("recentSpendingList");
-  if(recent){const entries=spendingHistory.map((item,index)=>({item,index})).filter(({item})=>item.forecastAdjustment===true);recent.innerHTML=entries.length?entries.map(({item,index})=>`<li style="display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center"><span>${formatShortDate(dateFromKey(item.date))} · Extra purchase</span><strong>−${formatMoney(item.amount)}</strong>${item.time?`<span class="small-note" style="grid-column:1/-1">${new Date(item.time).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}</span>`:""}<button type="button" class="secondary-btn" data-remove-spend="${index}" style="grid-column:1/-1;justify-self:start;padding:5px 10px;font-size:.8rem">Remove this entry</button></li>`).join(""):`<li><span>No extra purchases recorded</span></li>`;recent.querySelectorAll("[data-remove-spend]").forEach(button=>button.addEventListener("click",()=>{const index=Number(button.dataset.removeSpend);if(!Number.isInteger(index)||!spendingHistory[index]||spendingHistory[index].forecastAdjustment!==true)return;spendingHistory.splice(index,1);saveSpendingHistory();render()}));}
+  if(recent){const entries=spendingHistory.map((item,index)=>({item,index}));recent.innerHTML=entries.length?entries.map(({item,index})=>`<li style="display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center"><span>${formatShortDate(dateFromKey(item.date))} · Extra purchase</span><strong>−${formatMoney(item.amount)}</strong>${item.time?`<span class="small-note" style="grid-column:1/-1">${new Date(item.time).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}</span>`:""}<button type="button" class="secondary-btn" data-remove-spend="${index}" style="grid-column:1/-1;justify-self:start;padding:5px 10px;font-size:.8rem">Remove this entry</button></li>`).join(""):`<li><span>No extra purchases recorded</span></li>`;recent.querySelectorAll("[data-remove-spend]").forEach(button=>button.addEventListener("click",()=>{const index=Number(button.dataset.removeSpend);if(!Number.isInteger(index)||!spendingHistory[index]||spendingHistory[index].forecastAdjustment!==true)return;spendingHistory.splice(index,1);saveSpendingHistory();render()}));}
   const list=document.getElementById("protectedBillsList");
   if(list){
     const upcoming=events.filter(e=>e.type==="expense").slice(0,6);
@@ -461,11 +461,17 @@ function getCashFlowEvents(startDate,endDate){
 }
 function getCashBalanceThrough(date,inclusive=true){
   const asOf=startOfDay(dateFromKey(settings.balanceAsOfDate||formatDateInput(today)));
-  const cutoff=addDays(startOfDay(date),inclusive?1:0);
+  const target=startOfDay(date);
+  const cutoff=addDays(target,inclusive?1:0);
   let balance=(Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0);
-  if(cutoff<=addDays(asOf,1))return balance;
-  const eventStart=addDays(asOf,1);
-  getCashFlowEvents(eventStart,cutoff).forEach(e=>balance+=e.type==="income"?e.amount:-e.amount);
+  if(cutoff>addDays(asOf,1)){
+    const eventStart=addDays(asOf,1);
+    getCashFlowEvents(eventStart,cutoff).filter(e=>e.name!=="Extra purchase").forEach(e=>balance+=e.type==="income"?e.amount:-e.amount);
+  }
+  spendingHistory.filter(item=>item.forecastAdjustment===true).forEach(item=>{
+    const purchaseDate=startOfDay(dateFromKey(item.date));
+    if(purchaseDate<=target&&purchaseDate>=asOf)balance-=Number(item.amount)||0;
+  });
   return balance;
 }
 function renderCalendar(){
