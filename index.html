@@ -83,8 +83,9 @@
   <div class="selected-day-box" style="margin-top:14px">
     <h3>Subtract a purchase</h3>
     <p class="small-note">Enter what you spent and it will come off your available money.</p>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <input id="spendAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="Amount, e.g. 60.00" aria-label="Amount spent" style="flex:1;min-width:150px;padding:14px;border:1px solid #d5dfd8;border-radius:12px;font:inherit">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input id="spendAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="Amount" aria-label="Amount spent" style="flex:1 1 105px;min-width:90px;padding:12px;border:1px solid #d5dfd8;border-radius:12px;font:inherit">
+      <input id="spendDescription" type="text" maxlength="45" placeholder="What was it? (gas)" aria-label="Purchase description" style="flex:1 1 145px;min-width:120px;padding:12px;border:1px solid #d5dfd8;border-radius:12px;font:inherit">
       <button id="recordSpendBtn" type="button" class="primary-btn">Subtract</button>
     </div>
     <p id="spendStatus" class="small-note" aria-live="polite"></p>
@@ -211,7 +212,7 @@ async function recordSpending(){
   const amount=Number(document.getElementById("spendAmount").value);
   const status=document.getElementById("spendStatus");
   if(!Number.isFinite(amount)||amount<=0){status.textContent="Enter an amount greater than zero.";return}
-  const entry={id:makeId(),amount,date:dateKey(today),time:new Date().toISOString(),forecastAdjustment:true};
+  const description=document.getElementById("spendDescription").value.trim().slice(0,45);\n  const entry={id:makeId(),amount,description,date:dateKey(today),time:new Date().toISOString(),forecastAdjustment:true};
   spendingHistory.unshift(entry);status.textContent="Saving purchase…";
   try{await saveSpendingHistory()}catch(error){spendingHistory=spendingHistory.filter(item=>item.id!==entry.id);status.textContent="Could not save this purchase. No deduction was recorded. "+(error.message||"Storage unavailable.");return}
   document.getElementById("spendAmount").value="";
@@ -400,7 +401,7 @@ function renderSpendingOverview(){
   if(calendarSafeEl)calendarSafeEl.textContent=selectedDate<today?"—":formatMoney(selectedSafe+(selectedIsToday?forecast.allowance.remaining:getEverydayAllowance(selectedDate).remaining));
   if(calendarSafeLabel)calendarSafeLabel.textContent=selectedIsToday?"Available to spend right now":`Available to spend on ${formatShortDate(selectedDate)}`;
   const recent=document.getElementById("recentSpendingList");
-  if(recent){const entries=spendingHistory.map((item,index)=>({item,index}));recent.innerHTML=entries.length?entries.map(({item,index})=>`<li style="display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center"><span>${formatShortDate(dateFromKey(item.date))} · Extra purchase</span><strong>−${formatMoney(item.amount)}</strong>${item.time?`<span class="small-note" style="grid-column:1/-1">${new Date(item.time).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}</span>`:""}<button type="button" class="secondary-btn" data-remove-spend="${index}" style="grid-column:1/-1;justify-self:start;padding:5px 10px;font-size:.8rem">Remove this entry</button></li>`).join(""):`<li><span>No extra purchases recorded</span></li>`;recent.querySelectorAll("[data-remove-spend]").forEach(button=>button.addEventListener("click",async()=>{const index=Number(button.dataset.removeSpend);if(!Number.isInteger(index)||!spendingHistory[index])return;const removed=spendingHistory.splice(index,1)[0];try{await saveSpendingHistory();render()}catch(error){spendingHistory.splice(index,0,removed);document.getElementById("spendStatus").textContent="Could not remove that purchase: "+error.message;render()}}));}
+  if(recent){const entries=spendingHistory.map((item,index)=>({item,index}));recent.innerHTML=entries.length?entries.map(({item,index})=>`<li style="display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center"><span>${formatShortDate(dateFromKey(item.date))} · ${escapeHtml(item.description||"Extra purchase")}</span><strong>−${formatMoney(item.amount)}</strong>${item.time?`<span class="small-note" style="grid-column:1/-1">${new Date(item.time).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}</span>`:""}<button type="button" class="secondary-btn" data-remove-spend="${index}" style="grid-column:1/-1;justify-self:start;padding:5px 10px;font-size:.8rem">Remove this entry</button></li>`).join(""):`<li><span>No extra purchases recorded</span></li>`;recent.querySelectorAll("[data-remove-spend]").forEach(button=>button.addEventListener("click",async()=>{const index=Number(button.dataset.removeSpend);if(!Number.isInteger(index)||!spendingHistory[index])return;const removed=spendingHistory.splice(index,1)[0];try{await saveSpendingHistory();render()}catch(error){spendingHistory.splice(index,0,removed);document.getElementById("spendStatus").textContent="Could not remove that purchase: "+error.message;render()}}));}
   const list=document.getElementById("protectedBillsList");
   if(list){
     const upcoming=events.filter(e=>e.type==="expense").slice(0,6);
@@ -444,7 +445,7 @@ function getCashFlowEvents(startDate,endDate){
   // Extra purchases are recorded as dated forecast expenses, without changing the original starting balance.
   spendingHistory.forEach(item=>{
     const date=dateFromKey(item.date);
-    if(date>=start&&date<end)events.push({date,type:"expense",name:"Extra purchase",amount:Number(item.amount)||0,account:"Household"});
+    if(date>=start&&date<end)events.push({date,type:"expense",name:item.description||"Extra purchase",amount:Number(item.amount)||0,account:"Household"});
   });
   // Bills are automatically deducted on their due date unless a planned date is selected.
   let month=new Date(start.getFullYear(),start.getMonth()-1,1);
