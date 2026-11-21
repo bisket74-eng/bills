@@ -212,7 +212,8 @@ async function recordSpending(){
   const amount=Number(document.getElementById("spendAmount").value);
   const status=document.getElementById("spendStatus");
   if(!Number.isFinite(amount)||amount<=0){status.textContent="Enter an amount greater than zero.";return}
-  const description=document.getElementById("spendDescription").value.trim().slice(0,45);\n  const entry={id:makeId(),amount,description,date:dateKey(today),time:new Date().toISOString(),forecastAdjustment:true};
+  const description=document.getElementById("spendDescription").value.trim().slice(0,45);
+  const entry={id:makeId(),amount,description,date:dateKey(today),time:new Date().toISOString(),forecastAdjustment:true};
   spendingHistory.unshift(entry);status.textContent="Saving purchase…";
   try{await saveSpendingHistory()}catch(error){spendingHistory=spendingHistory.filter(item=>item.id!==entry.id);status.textContent="Could not save this purchase. No deduction was recorded. "+(error.message||"Storage unavailable.");return}
   document.getElementById("spendAmount").value="";
