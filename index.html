@@ -349,9 +349,9 @@ function getFourMonthSpendingForecast(fromDate=today){
   const monthAfter=start.getMonth()+4;
   const end=new Date(start.getFullYear()+Math.floor(monthAfter/12),monthAfter%12,Math.min(start.getDate(),new Date(start.getFullYear()+Math.floor(monthAfter/12),monthAfter%12,0).getDate()));
   const allowance=getEverydayAllowance(start);
-  // Protect only the current paycheck's remaining everyday allowance now.
+  // The current $400 cushion is available to spend; do not subtract it as a protected floor.
   const projectedBalance=getCashBalanceThrough(start);
-  const startingBalance=projectedBalance-allowance.remaining;
+  const startingBalance=projectedBalance;
   const events=getCashFlowEvents(addDays(start,1),end);
   let month=new Date(start.getFullYear(),start.getMonth()-1,1);
   while(month<end){
@@ -381,13 +381,13 @@ function renderSpendingOverview(){
   const events=getCashFlowEvents(today,forecast.end);
   const reserve=Math.max(0,forecast.startingBalance-safeToSpend);
   const safeEl=document.getElementById("safeToSpend"),cashEl=document.getElementById("cashAvailableNow"),reserveEl=document.getElementById("reservedForBills");
-  const totalAvailableToSpend=safeToSpend+forecast.allowance.remaining;
+  const totalAvailableToSpend=safeToSpend;
   if(safeEl)safeEl.textContent=formatMoney(totalAvailableToSpend);
   const safeCaption=document.querySelector("#spendingOverview .small-note");
   if(safeCaption){
     const limit=forecast.limitingEvent;
     safeCaption.textContent=limit
-      ? `This is your total safe-to-spend amount, INCLUDING your $400 cushion. The forecast counts scheduled paychecks, Tuesday deposits, family contributions, and bills through ${formatShortDate(forecast.end)}. The tightest point is ${limit.name} on ${formatShortDate(limit.date)}. Do not add another $400.`
+      ? `This is the money currently available after accounting for scheduled paychecks, deposits, bills, and future paycheck cushions through ${formatShortDate(forecast.end)}. The tightest point is ${limit.name} on ${formatShortDate(limit.date)}. Do not add another $400.`
       : `This total includes your $400 cushion and protects scheduled income and bills through ${formatShortDate(forecast.end)}. Do not add another $400.`;
   }
   const periodLabel=document.querySelector("#spendingOverview [data-period-label]");
@@ -399,7 +399,7 @@ function renderSpendingOverview(){
   const selectedDate=dateFromKey(selectedDateKey||dateKey(today));
   const selectedIsToday=dateKey(selectedDate)===dateKey(today);
   const selectedSafe=selectedIsToday?safeToSpend:calculateSafeToSpendOn(selectedDate);
-  if(calendarSafeEl)calendarSafeEl.textContent=selectedDate<today?"—":formatMoney(selectedSafe+(selectedIsToday?forecast.allowance.remaining:getEverydayAllowance(selectedDate).remaining));
+  if(calendarSafeEl)calendarSafeEl.textContent=selectedDate<today?"—":formatMoney(selectedSafe);
   if(calendarSafeLabel)calendarSafeLabel.textContent=selectedIsToday?"Available to spend right now":`Available to spend on ${formatShortDate(selectedDate)}`;
   const recent=document.getElementById("recentSpendingList");
   if(recent){const entries=spendingHistory.map((item,index)=>({item,index}));recent.innerHTML=entries.length?entries.map(({item,index})=>`<li style="display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center"><span>${formatShortDate(dateFromKey(item.date))} · ${escapeHtml(item.description||"Extra purchase")}</span><strong>−${formatMoney(item.amount)}</strong>${item.time?`<span class="small-note" style="grid-column:1/-1">${new Date(item.time).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}</span>`:""}<button type="button" class="secondary-btn" data-remove-spend="${index}" style="grid-column:1/-1;justify-self:start;padding:5px 10px;font-size:.8rem">Remove this entry</button></li>`).join(""):`<li><span>No extra purchases recorded</span></li>`;recent.querySelectorAll("[data-remove-spend]").forEach(button=>button.addEventListener("click",async()=>{const index=Number(button.dataset.removeSpend);if(!Number.isInteger(index)||!spendingHistory[index])return;const removed=spendingHistory.splice(index,1)[0];render();document.getElementById("spendStatus").textContent="Purchase removed.";try{await saveSpendingHistory()}catch(error){spendingHistory.splice(Math.min(index,spendingHistory.length),0,removed);document.getElementById("spendStatus").textContent="Could not save removal: "+error.message;render()}}));}
