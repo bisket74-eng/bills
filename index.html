@@ -100,7 +100,7 @@
 
 
 <section class="card card-calendar">
-  <div class="calendar-head"><button class="cal-nav" id="prevMonthBtn" type="button">‹</button><h2 id="calendarTitle">Month Year</h2><button class="cal-nav" id="nextMonthBtn" type="button">›</button></div><button type="button" id="toggleDailyLedger" class="btn btn-primary" style="width:100%;margin:8px 0 14px">Show daily money list</button><section id="dailyMoneyLedger" class="selected-day-box" style="display:none;margin-bottom:14px"><h3>Daily money in and out</h3><p class="small-note">Starting with your current combined balance, each day adds scheduled deposits, subtracts bills, and shows the running total. Extra purchases are included after you subtract them.</p><div id="dailyMoneyLedgerRows"></div></section><div class="summary-row"><div class="summary-box" style="grid-column:1/-1"><span id="calendarSafeLabel">Available to spend right now</span><strong id="calendarSafeToSpend" style="font-size:1.65rem;color:#2f7d50">$0.00</strong><p class="small-note">Based on your current balances and upcoming bills, assuming no extra purchases.</p></div></div><p class="small-note">Green = money coming in. Red = bills going out. Balances combine checking and the separate account so either can be used for bills.</p>
+  <div class="calendar-head"><button class="cal-nav" id="prevMonthBtn" type="button">‹</button><h2 id="calendarTitle">Month Year</h2><button class="cal-nav" id="nextMonthBtn" type="button">›</button></div><button type="button" id="toggleDailyLedger" class="btn btn-primary" style="width:100%;margin:8px 0 14px">Show daily money list</button><section id="dailyMoneyLedger" class="selected-day-box" style="display:none;margin-bottom:14px"><h3>Daily money in and out</h3><p class="small-note">This history starts from the date of your starting balance and shows each day's money in and out, newest day first. Scroll down to see earlier days and where the balance changed.</p><div id="dailyMoneyLedgerRows"></div></section><div class="summary-row"><div class="summary-box" style="grid-column:1/-1"><span id="calendarSafeLabel">Available to spend right now</span><strong id="calendarSafeToSpend" style="font-size:1.65rem;color:#2f7d50">$0.00</strong><p class="small-note">Based on your current balances and upcoming bills, assuming no extra purchases.</p></div></div><p class="small-note">Green = money coming in. Red = bills going out. Balances combine checking and the separate account so either can be used for bills.</p>
   <div class="weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
   <div class="calendar-grid" id="calendarGrid"></div>
   <div class="selected-day-box" id="selectedDayBox"><h3>Select a day</h3><p class="small-note">Tap a bill day or payday to see what is due.</p></div>
@@ -490,19 +490,35 @@ function renderCalendar(){
 function renderDailyMoneyLedger(){
   const host=document.getElementById("dailyMoneyLedgerRows");
   if(!host)return;
-  const start=startOfDay(today),end=addDays(start,121);
-  const events=getCashFlowEvents(start,end);
+  const asOf=startOfDay(dateFromKey(settings.balanceAsOfDate||formatDateInput(today)));
+  const through=startOfDay(today);
   let balance=(Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0);
-  let html=`<div class="mini-list"><div style="display:flex;justify-content:space-between;gap:12px;padding:10px 4px;font-weight:900"><span>Today · Starting balance</span><strong>${formatMoney(balance)}</strong></div>`;
-  for(let day=new Date(start);day<end;day=addDays(day,1)){
-    const dayEvents=events.filter(e=>dateKey(e.date)===dateKey(day));
-    html+=`<div style="padding:14px 4px;border-top:3px solid #d9534f;margin-top:6px"><div style="font-weight:900;font-size:1.08rem;margin-bottom:8px">${formatLongDate(day)}</div>`;
-    if(dayEvents.length){
-      dayEvents.forEach(e=>{const amount=Number(e.amount)||0;balance+=e.type==="income"?amount:-amount;const sign=e.type==="income"?"+":"−",cls=e.type==="income"?"money-left":"money-out";html+=`<div style="display:flex;justify-content:space-between;gap:10px;padding:4px 0"><span>${sign} ${escapeHtml(e.name)}</span><strong class="${cls}" style="white-space:nowrap">${sign}${formatMoney(amount)}</strong></div>`;});
-    }else html+=`<div class="small-note">No scheduled money in or out</div>`;
-    const safe=calculateSafeToSpendOn(day),reserved=Math.max(0,balance-safe);
-    html+=`<div style="display:flex;justify-content:space-between;gap:12px;border-top:1px dashed rgba(100,120,110,.25);padding-top:7px;margin-top:7px;font-weight:900"><span>End-of-day balance</span><strong>${formatMoney(balance)}</strong></div><div style="display:flex;justify-content:space-between;gap:12px;padding:5px 0;color:#a43b32"><span>Reserved for upcoming bills</span><strong>${formatMoney(reserved)}</strong></div><div style="display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-weight:900;color:#2f7d50"><span>Safe to spend</span><strong>${formatMoney(safe)}</strong></div></div>`;
+  const openingBalance=balance;
+  const allEvents=getCashFlowEvents(addDays(asOf,1),addDays(through,1));
+  const days=[];
+  for(let day=new Date(asOf);day<=through;day=addDays(day,1)){
+    const dayEvents=allEvents.filter(e=>dateKey(e.date)===dateKey(day));
+    // Include purchases made on the starting-balance date, matching the balance projection.
+    if(dateKey(day)===dateKey(asOf)){
+      spendingHistory.filter(item=>dateKey(dateFromKey(item.date))===dateKey(asOf)).forEach(item=>{
+        dayEvents.push({date:day,type:"expense",name:item.description||"Purchase",amount:Number(item.amount)||0,account:"Household"});
+      });
+    }
+    dayEvents.sort((a,b)=>(a.type===b.type?0:a.type==="income"?-1:1)||String(a.name).localeCompare(String(b.name)));
+    dayEvents.forEach(e=>balance+=e.type==="income"?Number(e.amount||0):-Number(e.amount||0));
+    days.push({date:new Date(day),events:dayEvents,closing:balance});
   }
+  let html=`<div class="mini-list"><div style="display:flex;justify-content:space-between;gap:12px;padding:10px 4px;font-weight:900"><span>Starting balance · ${formatLongDate(asOf)}</span><strong>${formatMoney(openingBalance)}</strong></div>`;
+  days.reverse().forEach(entry=>{
+    html+=`<div style="padding:14px 4px;border-top:3px solid #d9534f;margin-top:6px"><div style="font-weight:900;font-size:1.08rem;margin-bottom:8px">${formatLongDate(entry.date)}</div>`;
+    if(entry.events.length){
+      entry.events.forEach(e=>{
+        const amount=Number(e.amount)||0,sign=e.type==="income"?"+":"−",cls=e.type==="income"?"money-left":"money-out";
+        html+=`<div style="display:flex;justify-content:space-between;gap:10px;padding:4px 0"><span>${sign} ${escapeHtml(e.name)}</span><strong class="${cls}" style="white-space:nowrap">${sign}${formatMoney(amount)}</strong></div>`;
+      });
+    }else html+=`<div class="small-note">No recorded money in or out</div>`;
+    html+=`<div style="display:flex;justify-content:space-between;gap:12px;border-top:1px dashed rgba(100,120,110,.25);padding-top:7px;margin-top:7px;font-weight:900"><span>End-of-day balance</span><strong>${formatMoney(entry.closing)}</strong></div></div>`;
+  });
   host.innerHTML=html+`</div>`;
 }
 function renderSelectedDay(){
