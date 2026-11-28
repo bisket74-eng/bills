@@ -373,7 +373,14 @@ function getMonthlySpendingForecast(fromDate=today){
 function calculateSafeToSpendOn(date){
   const selected=startOfDay(date);
   if(selected<today)return 0;
-  return getMonthlySpendingForecast(selected).safeToSpend;
+  // Calendar-only paycheck-period view: remove the spendable surplus carried
+  // into this payday from the prior period. Keep bill-protected cash and the
+  // main overview's rolling monthly calculation unchanged.
+  const payday=getCurrentUSPSPayday(selected);
+  const previousPayday=getCurrentUSPSPayday(addDays(payday,-1));
+  const selectedForecast=getMonthlySpendingForecast(selected).safeToSpend;
+  const priorPeriodCarry=getMonthlySpendingForecast(previousPayday).safeToSpend;
+  return Math.max(0,selectedForecast-priorPeriodCarry);
 }
 function renderSpendingOverview(){
   const currentCash=(Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0);
@@ -399,7 +406,7 @@ function renderSpendingOverview(){
   const calendarSafeLabel=document.getElementById("calendarSafeLabel");
   const selectedDate=dateFromKey(selectedDateKey||dateKey(today));
   const selectedIsToday=dateKey(selectedDate)===dateKey(today);
-  const selectedSafe=selectedIsToday?safeToSpend:calculateSafeToSpendOn(selectedDate);
+  const selectedSafe=calculateSafeToSpendOn(selectedDate);
   if(calendarSafeEl)calendarSafeEl.textContent=selectedDate<today?"—":formatMoney(selectedSafe);
   if(calendarSafeLabel)calendarSafeLabel.textContent=selectedIsToday?"Available to spend right now":`Available to spend on ${formatShortDate(selectedDate)}`;
   const recent=document.getElementById("recentSpendingList");
