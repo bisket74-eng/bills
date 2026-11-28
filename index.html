@@ -344,10 +344,11 @@ function getEverydayAllowance(fromDate=today){
   // do not separately track or subtract purchases from this cushion.
   return{payday:getCurrentUSPSPayday(fromDate),used:0,remaining:400};
 }
-function getFourMonthSpendingForecast(fromDate=today){
+function getMonthlySpendingForecast(fromDate=today){
   const start=startOfDay(fromDate);
-  const monthAfter=start.getMonth()+4;
-  const end=new Date(start.getFullYear()+Math.floor(monthAfter/12),monthAfter%12,Math.min(start.getDate(),new Date(start.getFullYear()+Math.floor(monthAfter/12),monthAfter%12,0).getDate()));
+  // Rolling month-to-month view: protect bills and scheduled income through
+  // the same date next month, including the next planned mortgage payment.
+  const end=addMonths(start,1);
   const allowance=getEverydayAllowance(start);
   // The current $400 cushion is available to spend; do not subtract it as a protected floor.
   const projectedBalance=getCashBalanceThrough(start);
@@ -372,11 +373,11 @@ function getFourMonthSpendingForecast(fromDate=today){
 function calculateSafeToSpendOn(date){
   const selected=startOfDay(date);
   if(selected<today)return 0;
-  return getFourMonthSpendingForecast(selected).safeToSpend;
+  return getMonthlySpendingForecast(selected).safeToSpend;
 }
 function renderSpendingOverview(){
   const currentCash=(Number(settings.checkingBalance)||0)+(Number(settings.otherBalance)||0);
-  const forecast=getFourMonthSpendingForecast(today);
+  const forecast=getMonthlySpendingForecast(today);
   const safeToSpend=forecast.safeToSpend;
   const events=getCashFlowEvents(today,forecast.end);
   const reserve=Math.max(0,forecast.startingBalance-safeToSpend);
@@ -391,7 +392,7 @@ function renderSpendingOverview(){
       : `This total includes your $400 cushion and protects scheduled income and bills through ${formatShortDate(forecast.end)}. Do not add another $400.`;
   }
   const periodLabel=document.querySelector("#spendingOverview [data-period-label]");
-  if(periodLabel)periodLabel.textContent=`AVAILABLE TO SPEND · 4-MONTH BILL CHECK`;
+  if(periodLabel)periodLabel.textContent=`AVAILABLE TO SPEND · 1-MONTH BILL CHECK`;
   if(cashEl)cashEl.textContent=formatMoney(forecast.projectedBalance);
   if(reserveEl)reserveEl.textContent=formatMoney(reserve);
   const calendarSafeEl=document.getElementById("calendarSafeToSpend");
@@ -406,7 +407,7 @@ function renderSpendingOverview(){
   const list=document.getElementById("protectedBillsList");
   if(list){
     const upcoming=events.filter(e=>e.type==="expense").slice(0,6);
-    list.innerHTML=upcoming.length?upcoming.map(e=>`<li><span>${formatShortDate(e.dueDate)}${e.date<today?" · overdue":""}</span><span>${escapeHtml(e.name)}</span><strong>${formatMoney(e.amount)}</strong>${isAutoDeductedBill(e)?`<span style="grid-column:1/-1;font-size:.78rem;font-weight:800;color:var(--muted)">AUTO · Date is fixed</span>`:`<span style="grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--muted)">Pay this one on <input type="date" class="payment-date-input" data-payment-bill="${e.billId}" data-payment-due="${dateKey(e.dueDate)}" min="${dateKey(today)}" value="${dateKey(e.date)}" style="width:auto;flex:1;max-width:190px;padding:7px 9px;border-radius:10px;font-size:.85rem"></span>`}</li>`).join(""):`<li><span>—</span><span>No listed bills in the next four months</span><strong>$0.00</strong></li>`;
+    list.innerHTML=upcoming.length?upcoming.map(e=>`<li><span>${formatShortDate(e.dueDate)}${e.date<today?" · overdue":""}</span><span>${escapeHtml(e.name)}</span><strong>${formatMoney(e.amount)}</strong>${isAutoDeductedBill(e)?`<span style="grid-column:1/-1;font-size:.78rem;font-weight:800;color:var(--muted)">AUTO · Date is fixed</span>`:`<span style="grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--muted)">Pay this one on <input type="date" class="payment-date-input" data-payment-bill="${e.billId}" data-payment-due="${dateKey(e.dueDate)}" min="${dateKey(today)}" value="${dateKey(e.date)}" style="width:auto;flex:1;max-width:190px;padding:7px 9px;border-radius:10px;font-size:.85rem"></span>`}</li>`).join(""):`<li><span>—</span><span>No listed bills in the next month</span><strong>$0.00</strong></li>`;
     list.querySelectorAll("[data-payment-bill]").forEach(input=>input.addEventListener("change",()=>setOccurrencePaymentDate(input.dataset.paymentBill,input.dataset.paymentDue,input.value)));
 
   }
